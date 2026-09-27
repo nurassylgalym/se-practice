@@ -1,0 +1,38 @@
+schema: 1
+week: "03"
+
+student:
+  name: "Nurassyl Galym"
+  student_id: "26B030025"
+  github: "nurassylgalym"
+
+assistant:
+  tool: "Gemini"
+  model: "Gemini 2.5 Flash"
+
+counts:
+  user_stories: 6
+  acceptance_criteria_sets: 3
+
+checker:
+  pass: 23
+  fail: 0
+  error: 0
+  commit: "3f5daf1"
+
+assumptions:
+  overlap_touching_bookings: allowed
+  exactly_two_hours: allowed
+
+traceability:
+  use_cases_not_covered: []
+  stories_not_traced: []
+
+review_findings:
+  - "UC-06 Send confirmation had no direct actor association because it is triggered automatically by system events."
+  - "US-04 Block or unblock room originally contained scope creep features until out-of-scope items were removed."
+  - "AC-06 verifies boundary conditions for the maximum two-hour reservation rule under R2."
+
+honesty:
+  can_explain_everything_submitted: yes
+  ai_usage_disclosed: yes
