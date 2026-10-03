@@ -61,4 +61,4 @@ note bottom of Booking
   5. Successful booking produces confirmation (R4)
 end note
 
-@endl
+@enduml
