@@ -1,0 +1,26 @@
+@startuml
+actor Student
+participant BookingService
+participant BookingRepository
+
+Student -> BookingService : requestBooking(roomId, startTime, duration)
+activate BookingService
+
+BookingService -> BookingService : validateRequest(startTime, duration)
+
+BookingService -> BookingRepository : checkRoomAvailability(roomId, startTime, duration)
+activate BookingRepository
+BookingRepository --> BookingService : isAvailable (R3 blocked status, R2 overlap checked)
+deactivate BookingRepository
+
+alt valid request (R1, R2, R3 passed)
+    BookingService -> BookingRepository : saveBooking(booking)
+    activate BookingRepository
+    BookingRepository --> BookingService : bookingSaved
+    deactivate BookingRepository
+    BookingService --> Student : confirmation(bookingId, status="CONFIRMED")
+else room unavailable or blocked (R3)
+    BookingService --> Student : error("Room unavailable or blocked")
+end
+deactivate BookingService
+@enduml

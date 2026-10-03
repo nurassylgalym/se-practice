@@ -1,0 +1,35 @@
+@startuml
+left to right direction
+
+' System Boundary
+rectangle "Smart Campus Study Room Booking" {
+  
+  ' Primary Goals & User Stories
+  usecase "View Room Availability" as UC_View
+  usecase "Book Study Room" as UC_Book
+  usecase "Cancel Booking" as UC_Cancel
+  usecase "Block or Unblock Room" as UC_Block
+  usecase "Review Room Usage" as UC_Review
+  usecase "Receive Confirmation" as UC_Confirm
+  
+}
+
+' External Actors
+actor Student
+actor Administrator
+
+' Justified Associations
+Student --> UC_View
+Student --> UC_Book
+Student --> UC_Cancel
+
+Administrator --> UC_Block
+Administrator --> UC_Review
+
+' Relationships between Use Cases
+' why: Booking a room or cancelling a booking automatically triggers a confirmation to the student (R4, US-06).
+UC_Book .> UC_Confirm : <<include>>
+' why: Cancelling an existing reservation triggers an automatic confirmation receipt to the student (R4, US-06).
+UC_Cancel .> UC_Confirm : <<include>>
+
+@enduml

@@ -1,0 +1,42 @@
+schema: 1
+week: "04"
+
+student:
+  name: "Nurassyl Galym"
+  student_id: "26B030025"
+  github: "nurassylgalym"
+
+assistant:
+  tool: "Gemini"
+  model: "Gemini 2.5 Flash"
+
+counts:
+  behaviour_diagram: sequence
+  stories_source: week-03
+  use_cases: 5
+  change_log_rows: 5
+
+checker:
+  pass: 37
+  fail: 0
+  error: 0
+  commit: "b6e0973"
+  kept_fails: []
+
+assumptions:
+  overlap_touching_bookings: allowed
+  blocking_a_booked_room: keep-bookings
+
+traceability:
+  use_cases_not_traced: []
+  rules_not_shown: []
+
+review_findings:
+  - "UC_Book and UC_Confirm include relationship was removed because confirmation is an automated post-condition under rule R4."
+  - "Room to Booking association multiplicity was corrected from 1..* to 0..* to support valid domain room creation."
+  - "In the sequence diagram the AI's original showed no validateRequest step before saveBooking, so rules R1 (time range), R2 (overlap) and R3 (blocked room) were not visibly enforced; validateRequest and checkRoomAvailability now come before saveBooking."
+
+honesty:
+  originals_unedited: yes
+  can_explain_everything_submitted: yes
+  ai_usage_disclosed: yes

@@ -1,0 +1,64 @@
+@startuml
+' Class Diagram for Smart Campus Study Room Booking
+
+' Domain Classes
+class Student {
+  - studentId: String
+  - name: String
+  - email: String
+  + viewAvailability(): List<Room>
+  + bookRoom(roomId: String, startTime: DateTime, duration: Duration): Booking
+  + cancelBooking(bookingId: String): void
+}
+
+class Room {
+  - roomId: String
+  - roomNumber: String
+  - capacity: int
+  - isBlocked: boolean
+  + isAvailable(startTime: DateTime, duration: Duration): boolean
+  + blockRoom(): void
+  + unblockRoom(): void
+}
+
+class Booking {
+  - bookingId: String
+  - startTime: DateTime
+  - duration: Duration
+  - status: BookingStatus
+  - createdAt: DateTime
+  + isValidDuration(): boolean
+  + isFutureBooking(): boolean
+  + overlapsWith(other: Booking): boolean
+  + cancel(): void
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+class Administrator {
+  - adminId: String
+  - name: String
+  + blockRoom(room: Room): void
+  + unblockRoom(room: Room): void
+  + reviewUsage(): List<Booking>
+}
+
+' Relationships with Multiplicities
+Student "1" -- "0..*" Booking : creates / owns >
+Room "1" -- "0..*" Booking : reserved in >
+Administrator "0..*" -- "0..*" Room : blocks / unblocks >
+
+' Business Rules Constraints
+note bottom of Booking
+  Constraints:
+  1. Duration > 0 and <= 2 hours (R1)
+  2. Start time must be in the future (R1)
+  3. Active bookings for same room cannot overlap (R2)
+  4. Blocked room cannot accept new booking (R3)
+  5. Successful booking produces confirmation (R4)
+end note
+
+@enduml
