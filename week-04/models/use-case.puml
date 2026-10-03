@@ -1,0 +1,25 @@
+@startuml
+left to right direction
+
+' System Boundary
+rectangle "Smart Campus Study Room Booking" {
+  usecase "View Room Availability" as UC_View
+  usecase "Book Study Room" as UC_Book
+  usecase "Cancel Booking" as UC_Cancel
+  usecase "Block or Unblock Room" as UC_Block
+  usecase "Review Room Usage" as UC_Review
+}
+
+' External Actors
+actor Student
+actor Administrator
+
+' Justified Associations
+Student --> UC_View
+Student --> UC_Book
+Student --> UC_Cancel
+
+Administrator --> UC_Block
+Administrator --> UC_Review
+
+@enduml

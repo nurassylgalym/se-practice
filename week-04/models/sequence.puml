@@ -1,0 +1,35 @@
+@startuml
+' Task 3A: Sequence Diagram for Book room
+autonumber
+
+actor Student
+participant BookingService
+participant BookingRepository
+
+Student -> BookingService : createBooking(studentId, roomId, startTime, duration)
+activate BookingService
+
+' Step 1: Validate rules (R1, R3, R2) before attempting reservation
+BookingService -> BookingRepository : checkRoomAvailability(roomId, startTime, duration)
+activate BookingRepository
+BookingRepository --> BookingService : roomStatus(isBlocked, overlappingBookings)
+deactivate BookingRepository
+
+' Step 2: Attempt reservation using alt block (guards without square brackets)
+alt valid request (R1, R3, R2 passed)
+    ' Successful reservation branch
+    BookingService -> BookingRepository : saveBooking(studentId, roomId, startTime, duration)
+    activate BookingRepository
+    BookingRepository --> BookingService : bookingConfirmed(bookingId)
+    deactivate BookingRepository
+
+    ' R4 Confirmation output
+    BookingService --> Student : confirmation(bookingId, status="CONFIRMED")
+
+else unavailable room or rule violation
+    ' Alternative branch: room blocked, overlapping time slot, or invalid duration/time
+    BookingService --> Student : error("Booking failed: Room unavailable or invalid request parameters")
+end
+
+deactivate BookingService
+@endl
