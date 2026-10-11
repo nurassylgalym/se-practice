@@ -14,10 +14,12 @@ schema: 1
 assignment: "sis-01"            # do not edit
 
 student:
-  name:                         # as in the university register
-  student_id:                   # e.g. 24B031016
-  group:                        # your group code, as in the timetable
-  github:                       # username only, not a URL
+  name: Nurassyl Galym
+  student_id: 26B030025
+  github: nurassylgalym
+  group:                        CSCI2208
+
+  github: nurassylgalym
 
 topic:                          # one of 1.1 … 1.10 — the same as the **Topic:** line in report.md
 
