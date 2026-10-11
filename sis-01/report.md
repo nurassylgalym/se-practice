@@ -9,7 +9,7 @@
   - Comments like this one are ignored by the word counter. Delete them or leave them.
 -->
 
-**Topic:** 1.(write here)
+**Topic:** 1.3 Software engineering and cost
 
 <!-- Exactly one of 1.1 … 1.10, e.g.  **Topic:** 1.4  -->
 
@@ -20,17 +20,17 @@
 <!-- 100–150 words, labels included. One small scenario, used in every prompt and in your
      whole answer. Anything fictional is labelled in Assumptions. -->
 
-**Question:** (write here — the question of your topic, in your own words)
+**Question:** How can engineering methods reduce the total cost of a small marks analyzer over its life, and does faster AI code generation really lower that cost?
 
-**Users:** (write here)
+**Users:** Course instructors (3–5 people, fictional) who analyze group marks each semester.
 
-**Problem:** (write here)
+**Problem:** Instructors calculate average, highest, lowest and pass rate by hand in spreadsheets, which is slow and inconsistent between instructors.
 
-**Constraints:** (write here — two constraints)
+**Constraints:** (1) The pass threshold changes from semester to semester. (2) Student marks must stay inside the university network.
 
-**Risk:** (write here — one important failure or misuse risk)
+**Risk:** An AI-generated version runs correctly but silently invents rules, such as how blank or invalid marks are treated, and nobody can safely change it next semester.
 
-**Assumptions:** (write here — every fictional detail, labelled as fictional)
+**Assumptions:** All fictional: group size of 30 students, pass threshold of 50, one student maintainer, no budget for paid tools.
 
 ## 2. Analysis
 
@@ -74,11 +74,11 @@
 <!-- Written BEFORE you run Prompt A. Five points, your own words, numbered. These are the
      "five points" you paste into Prompt A. -->
 
-1. (write here)
-2. (write here)
-3. (write here)
-4. (write here)
-5. (write here)
+1. Defining edge-case behavior (e.g., handling non-numeric cells or blank entries) before code generation prevents costly bugs and manual re-checking during semester grade submissions.
+2. Making the pass threshold a configurable parameter rather than hardcoded value reduces future maintenance effort when grading policies change.
+3. Writing lightweight unit tests guarantees that subsequent student maintainers can safely update the tool without breaking mark calculation logic.
+4. Rapid AI code generation lowers initial development time, but unverified AI-generated assumptions increase long-term debugging and maintenance overhead.
+5. Using local scripts or self-hosted university infrastructure ensures student data remains within the local network while avoiding paid SaaS subscription costs.
 
 ## 8. Appendix B — AI exchanges
 
