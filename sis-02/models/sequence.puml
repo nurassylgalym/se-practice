@@ -17,11 +17,16 @@ ui -> controller : getOfferings(semester)
 activate controller
 controller -> offering : getDetailsAndAvailability()
 activate offering
-offering --> controller : courseCode, title, section, availablePlaces
+offering --> controller : courseCode, title, offering, availablePlaces
 deactivate offering
 controller --> ui : list of offering details
 deactivate controller
-ui --> student : display catalog (code, title, section, availablePlaces)
+ui --> student : display catalog (code, title, offering, availablePlaces)
+deactivate ui
+
+student -> ui : selectOffering(offeringId)
+activate ui
+ui --> student : display offering details and registration prompt
 deactivate ui
 
 == US-02 & US-03: Register for Offering (R2 - R5) ==
@@ -39,23 +44,29 @@ end note
 controller -> offering : checkAvailabilityAndDuplicate(studentId)
 activate offering
 
-alt Failure: Already Enrolled (R3, R5 / AC-06)
+alt already enrolled
     offering --> controller : Status: Already Enrolled
+    deactivate offering
     controller --> ui : reject("already enrolled")
+    deactivate controller
     ui --> student : display message "already enrolled"
+    deactivate ui
 
-else Failure: Course Full (R2, R5 / AC-05)
+else course full
     offering --> controller : Status: Course Full (availablePlaces == 0)
+    deactivate offering
     controller --> ui : reject("course full")
+    deactivate controller
     ui --> student : display message "course full"
+    deactivate ui
 
-else Success: Place Available & Not Enrolled (R2, R4 / AC-03, AC-04)
+else not enrolled and places left
     offering --> controller : Status: OK
     controller -> enrollment ** : create(studentId, offeringId)
-    controller -> offering : incrementEnrollment()
-    offering --> controller : updated
+    controller -> offering : getAvailablePlaces()
+    offering --> controller : availablePlaces
     deactivate offering
-    controller --> ui : confirmRegistration(enrollmentDetails)
+    controller --> ui : confirmRegistration(enrollmentDetails, availablePlaces)
     deactivate controller
     ui --> student : display confirmation
     deactivate ui

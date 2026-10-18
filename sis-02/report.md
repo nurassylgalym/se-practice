@@ -47,13 +47,13 @@
 
 ![Final sequence diagram](models/img/sequence.png)
 
-**Participants:** (write here — each lifeline and what it stands for)
+**Participants:** Student is the signed-in person using the system. CatalogUI is the screen that shows the catalog and the messages. RegistrationController receives the requests and runs the steps in order. CourseOffering is the section the student wants a place in. Enrollment is the record that is created when the registration succeeds.
 
-**Atomic operation:** (write here — which messages form the one atomic step: the final duplicate check, the capacity check and the creation of the Enrollment, and why a catalog view reserves nothing)
+**Atomic operation:** The messages from checkAvailabilityAndDuplicate to create(studentId, offeringId) are one atomic step, marked by the note over RegistrationController and CourseOffering. The duplicate check, the capacity check and the creation of the Enrollment cannot be split, so two students cannot both take the last place. The catalog view reserves nothing because browseCatalog and selectOffering only read data and happen before the note, so a place can be gone by the time the student registers (T3).
 
-**Where the Enrollment is created:** (write here — which message, which lifeline, and which class in section 4 it produces)
+**Where the Enrollment is created:** In the message create(studentId, offeringId) sent by :RegistrationController to :Enrollment, in the branch else not enrolled and places left. It produces an instance of the class Enrollment from section 4. It comes before confirmRegistration, so the student is never told "registered" before the Enrollment exists.
 
-**Technical lifelines:** (write here — every lifeline that is NOT a class in the class diagram, by name, and why the difference in abstraction is fine. "None" if there are none.)
+**Technical lifelines:** CatalogUI and RegistrationController are not classes in the class diagram. They are the screen and the controller that run the process, while the class diagram shows only the business concepts (Student, Course, CourseOffering, Enrollment). The difference in abstraction is fine because each diagram answers a different question: who does what and in what order, and what the system stores.
 
 ## 4. Class diagram
 
@@ -65,15 +65,15 @@
 
 | Association | Read left to right | Read right to left |
 | --- | --- | --- |
-| (write here) | (write here) | (write here) |
-| (write here) | (write here) | (write here) |
-| (write here) | (write here) | (write here) |
+| Course "1" -- "0..*" CourseOffering : defines | One Course defines zero or more CourseOfferings. | Each CourseOffering belongs to exactly one Course. |
+| Student "1" -- "0..*" Enrollment : makes | One Student makes zero or more Enrollments. | Each Enrollment is made by exactly one Student. |
+| CourseOffering "1" -- "0..*" Enrollment : has | One CourseOffering has zero or more Enrollments. | Each Enrollment belongs to exactly one CourseOffering. |
 
-**How an Enrollment links a student to an offering:** (write here)
+**How an Enrollment links a student to an offering:** Enrollment sits between Student and CourseOffering. It has exactly one Student and exactly one CourseOffering, through the two associations above, so one Enrollment is one student registered in one offering.
 
-**Capacity constraint:** (write here — and why multiplicity alone cannot express it)
+**Capacity constraint:** The note on CourseOffering says count(Enrollments) <= capacity. Multiplicity cannot express it because 0..* only says an offering may have any number of Enrollments. It cannot compare that number with the capacity attribute of the same offering.
 
-**Uniqueness constraint:** (write here — and why multiplicity alone cannot express it)
+**Uniqueness constraint:** The note on Enrollment says one Student has at most one Enrollment per CourseOffering. Multiplicity cannot express it because each end is counted on its own: a student may have many Enrollments and an offering may have many, but the multiplicities say nothing about the pair student plus offering being unique.
 
 ## 5. Traceability
 
@@ -84,11 +84,11 @@
 
 | Rule and criterion | Model evidence | Validation case |
 | --- | --- | --- |
-| R1 + (write here) | (write here) | (write here) |
-| R2 + (write here) | (write here) | (write here) |
-| R3 + (write here) | (write here) | (write here) |
-| R4 + (write here) | (write here) | (write here) |
-| R5 + (write here) | (write here) | (write here) |
+| R1 + AC-01, AC-02 | Messages 3–6: getDetailsAndAvailability returns courseCode, title, offering, availablePlaces, and the catalog displays them; no reservation message exists. Classes: Course (courseCode, title), CourseOffering (semester, getAvailablePlaces()) | No T case; extra check: compared the fields in messages 4 and 6 with the four items named in R1 |
+| R2 + AC-03, AC-04, AC-05 | Message 11 checkAvailabilityAndDuplicate inside the atomic note; branch else course full (messages 15–17); capacity note on CourseOffering | T2, T3 |
+| R3 + AC-03, AC-04, AC-06 | Message 11 and branch alt already enrolled (messages 12–14); uniqueness note on Enrollment | T4 |
+| R4 + AC-03, AC-04 | Branch else not enrolled and places left: message 19 create, 20–21 getAvailablePlaces, 22 confirmRegistration after creation; Enrollment linked to Student and CourseOffering | T1, T2 |
+| R5 + AC-05, AC-06 | Branches already enrolled and course full: reject("already enrolled") at 13, reject("course full") at 16, no create message in either branch | T3, T4 |
 
 ## 6. Walkthroughs
 
@@ -99,10 +99,10 @@
 
 | Case | Observed path and state change | Judgment and evidence |
 | --- | --- | --- |
-| T1. Available | (write here) | (write here) |
-| T2. Last place | (write here) | (write here) |
-| T3. Full | (write here) | (write here) |
-| T4. Duplicate | (write here) | (write here) |
+| T1. Available | Messages 1–6 show the catalog, 7–8 the student selects the offering, 9–10 the registration request reaches the controller. Message 11 checks the offering and 18 returns Status: OK. Message 19 creates the Enrollment, 20–21 read the places left, 22–23 confirm. Enrollments: 0 → 1 (capacity 2, 1 place left). | Pass — branch else not enrolled and places left (messages 18–23). The Enrollment is created at 19 before the confirmation at 22. |
+| T2. Last place | Same path as T1: 9–11, Status: OK at 18, create at 19, getAvailablePlaces at 20–21, confirmation at 22–23. Enrollments: 1 → 2 (capacity 2), and message 21 returns 0 places left, which goes into the confirmation. | Pass — branch else not enrolled and places left (messages 18–23). Message 19 creates the second Enrollment and 21 shows no places remain. |
+| T3. Full | Messages 1–6 show a place in the catalog. Between 6 and 9 the count becomes 2 of 2 (the diagram shows no second student, only the gap). 9–11: the check runs again inside the atomic note. The student is new, so already enrolled (12–14) is skipped. Message 15 returns Course Full, 16–17 reject. Enrollments: 2 → 2. | Pass — branch else course full (messages 15–17). No create message (19) in this branch, so no new Enrollment. |
+| T4. Duplicate | The same student requests again: 9–10, then message 11 checks. Message 12 returns Status: Already Enrolled, 13 rejects with already enrolled, 14 shows it to the student. Enrollments: 1 → 1. | Pass — branch alt already enrolled (messages 12–14). No create at 19 and no confirmation at 22, so nothing is saved. |
 
 ## 7. Review decisions
 
@@ -110,12 +110,14 @@
      Decision: accepted / rejected / modified — and what you did. Reason: why, in a full
      sentence. Rule: R1–R5. Do not invent an error to fill the table; a justified rejection
      of advice counts. -->
-
 | AI suggestion or model element | Decision | Reason | Rule |
 | --- | --- | --- | --- |
-| (write here) | (write here) | (write here) | (write here) |
-| (write here) | (write here) | (write here) | (write here) |
-| (write here) | (write here) | (write here) | (write here) |
+| Original: `deactivate offering` only in the success branch (Prompt C, issue 1) | Modified: moved the deactivations of offering, controller and ui so every alt branch closes them | Prompt C only named offering, but the controller and ui bars also stayed open after both rejections | R5 |
+| Original: `incrementEnrollment()` after creating the Enrollment (Prompt C, issue 2) | Accepted: removed the call, availability stays derived as capacity minus the number of Enrollments | The count was stored and also calculated, so the two values could drift apart in T2 | R4, R2 |
+| Original: `create(studentId, offeringId)`, Prompt C proposes `offering.createEnrollment(student)` (issue 3) | Rejected: kept the controller creating the Enrollment | The diagram already shows who is linked, and moving creation into the offering adds a message without fixing any rule | R4 |
+| Prompt C optional point: make CourseOffering the information expert with `register(student)` | Rejected: kept the controller orchestrating | The assignment asks for a visible atomic block with the checks, and one hidden call would hide the guards from T3 and T4 | R2, R3 |
+| Original: alt labels "Failure: Already Enrolled (R3, R5 / AC-06)" and "Success: Place Available & Not Enrolled" (my own inspection, Prompt C missed it) | Modified: renamed to `alt already enrolled`, `else course full`, `else not enrolled and places left` | The handout requires these exact guards, and the rule IDs in the labels made them hard to read | R3, R2, R4 |
+| Original: no step where the student selects an offering, and "section" used instead of "offering" (my own inspection) | Modified: added a `selectOffering` message after the catalog and renamed section to offering | R1 and AC-01 say offering, and the stories need browse, select and register as three separate steps | R1 |
 
 ## 8. Modeling explanation
 
@@ -496,32 +498,586 @@ end note
 **Prompt:**
 
 ~~~~text
-(paste here)
+Review these two UML models against R1–R5 and my acceptance criteria. Check message order, guards, state changes, multiplicities and naming.
+Inspect the four validation cases: available places, exactly one place, full course after a stale catalog view, and duplicate registration.
+For each issue, cite the affected rule and model element. Explain the impact and propose a focused correction. Separate genuine defects from optional design choices.
+@startuml
+autonumber
+actor "Student" as student
+participant ":CatalogUI" as ui
+participant ":RegistrationController" as controller
+participant ":CourseOffering" as offering
+participant ":Enrollment" as enrollment
+
+== US-01: Browse Catalog (R1) ==
+student -> ui : browseCatalog(semester)
+activate ui
+ui -> controller : getOfferings(semester)
+activate controller
+controller -> offering : getDetailsAndAvailability()
+activate offering
+offering --> controller : courseCode, title, section, availablePlaces
+deactivate offering
+controller --> ui : list of offering details
+deactivate controller
+ui --> student : display catalog (code, title, section, availablePlaces)
+deactivate ui
+
+== US-02 & US-03: Register for Offering (R2 - R5) ==
+student -> ui : requestRegistration(studentId, offeringId)
+activate ui
+ui -> controller : registerStudent(studentId, offeringId)
+activate controller
+
+note over controller, offering
+  <b>Atomic Operation Boundary</b>
+  Final state checks (capacity, duplicate check) and enrollment creation
+  must execute atomically to prevent race conditions on the last available place.
+end note
+
+controller -> offering : checkAvailabilityAndDuplicate(studentId)
+activate offering
+
+alt Failure: Already Enrolled (R3, R5 / AC-06)
+    offering --> controller : Status: Already Enrolled
+    controller --> ui : reject("already enrolled")
+    ui --> student : display message "already enrolled"
+
+else Failure: Course Full (R2, R5 / AC-05)
+    offering --> controller : Status: Course Full (availablePlaces == 0)
+    controller --> ui : reject("course full")
+    ui --> student : display message "course full"
+
+else Success: Place Available & Not Enrolled (R2, R4 / AC-03, AC-04)
+    offering --> controller : Status: OK
+    controller -> enrollment ** : create(studentId, offeringId)
+    controller -> offering : incrementEnrollment()
+    offering --> controller : updated
+    deactivate offering
+    controller --> ui : confirmRegistration(enrollmentDetails)
+    deactivate controller
+    ui --> student : display confirmation
+    deactivate ui
+end
+
+@enduml
+
+@startuml
+skinparam classAttributeIconSize 0
+
+class Student {
+-   
+studentId : String
+-   
+name : String
+-   
+email : String
+}
+
+class Course {
+-   
+courseCode : String
+-   
+title : String
+-   
+description : String
+}
+
+class CourseOffering {
+-   
+offeringId : String
+-   
+semester : String
+-   
+section : String
+-   
+capacity : Integer {capacity > 0}
+  + getAvailablePlaces() : Integer
+}
+
+class Enrollment {
+-   
+enrollmentId : String
+-   
+registeredAt : DateTime
+}
+
+Course "1" -- "0..*" CourseOffering : defines >
+Student "1" -- "0..*" Enrollment : makes >
+CourseOffering "1" -- "0..*" Enrollment : has >
+
+note top of CourseOffering
+  <b>Capacity Constraint:</b>
+  capacity > 0
+  availablePlaces = capacity - count(Enrollments)
+  count(Enrollments) <= capacity
+end note
+
+note bottom of Enrollment
+  <b>Uniqueness Constraint (R3):</b>
+  A Student can have at most 1 Enrollment per CourseOffering.
+  Unique combination: {studentId, offeringId}
+end note
+
+@enduml
+
+| **R1. Catalog** | Show the course code, title, offering and available places for one semester. |
+| **R2. Capacity** | Recheck current availability when registering. Enrollment must never exceed the offering's capacity. |
+| **R3. Duplicates** | A student may have at most one enrollment in the same offering. Reject a repeat request. |
+| **R4. Success** | Create exactly one Enrollment linking the student and offering, update availability and return a confirmation. |
+| **R5. Rejection** | Explain "course full" or "already enrolled". Create no enrollment and leave the enrollment count unchanged. |
+
+User stories and acceptance criteria
+
+### US-01 — Browse offerings
+
+**US-01:** As a student, I want to browse the course catalog for a semester, so that I can see the available offerings and their remaining places before I choose one.
+
+- **AC-01** (R1): Given a signed-in student opens the catalog for one semester, When the list of offerings is shown, Then each offering displays the course code, title, offering and available places.
+- **AC-02** (R1): Given an offering has 0 available places, When a student views the catalog, Then the offering is shown with 0 available places and no place is reserved for the student.
+
+### US-02 — Register for an offering
+
+**US-02:** As a student, I want to register for a specific course offering, so that I get a place in that section.
+
+- **AC-03** (R2, R3, R4): Given an offering has available places and the student has no enrollment in it, When the student requests registration, Then the system creates exactly one Enrollment linking the student and the offering, decreases the available places by 1 and returns a confirmation.
+- **AC-04** (R2, R3, R4): Given an offering has exactly 1 available place and the student has no enrollment in it, When the student requests registration, Then the system creates exactly one Enrollment, the available places become 0 and a confirmation is returned.
+
+### US-03 — Receive a clear rejection
+
+**US-03:** As a student, I want to get a clear message when my registration cannot be completed, so that I understand why it was declined.
+
+- **AC-05** (R2, R5): Given the catalog showed a place in an offering but its current enrollment count now equals its capacity, When the student requests registration, Then the system rejects the request with "course full", creates no Enrollment and leaves the enrollment count unchanged.
+- **AC-06** (R3, R5): Given a student already has an enrollment in an offering, When the same student requests registration for that offering again, Then the system rejects the request with "already enrolled", creates no new Enrollment and leaves the enrollment count unchanged.
 ~~~~
 
 **Response:**
 
 ~~~~text
-(paste here)
+Here is the review of your UML Sequence and Class models evaluated against requirements **R1–R5**, **US-01 through US-03**, and **AC-01 through AC-06**, including a detailed dry-run of the four validation scenarios.
+
+---
+
+## 1. Summary of Model Review Findings
+
+### Key Strengths
+
+* **Data Model & Constraints:** The domain model correctly captures core entities, invariants ($\text{capacity} > 0$), derived properties ($\text{availablePlaces} = \text{capacity} - \text{count(Enrollments)}$), and the explicit uniqueness constraint for duplicate prevention.
+* **Concurrency Handling:** The note on the sequence diagram explicitly establishes an atomic boundary around availability checks, duplicate checks, and enrollment creation, satisfying race condition requirements for **AC-05**.
+
+---
+
+## 2. Detailed Review of Requirements & Model Consistency
+
+### Genuine Defects
+
+#### Issue 1: Activation Lifecycle Leak in Alt Failure Branches (Sequence Diagram)
+
+* **Affected Element:** `participant ":CourseOffering" as offering`, `alt Failure` branches.
+* **Rules & Criteria:** Execution Spec / Object Activation Correctness (UML 2.5).
+* **Impact:** In the sequence diagram, `deactivate offering` is placed **only** inside the `Success` branch. If the workflow follows the `Already Enrolled` or `Course Full` branches, the execution focus (lifeline bar) for `offering` remains active indefinitely. This is a UML syntax and execution defect.
+* **Correction:** Move `deactivate offering` right after message 9 (`checkAvailabilityAndDuplicate(studentId)` returns) so that `offering` deactivates regardless of which `alt` branch is taken, or place explicit `deactivate offering` calls at the end of each `alt` branch.
+
+#### Issue 2: Incorrect Mutator Logic `incrementEnrollment()` vs Derived State (Sequence Diagram & Class Diagram)
+
+* **Affected Element:** Message 17 (`controller -> offering : incrementEnrollment()`).
+* **Rules & Criteria:** **R2, R4** / **AC-03, AC-04** (State Consistency).
+* **Impact:** In the Class Diagram, `availablePlaces` is explicitly defined in a constraint as a **derived value**: $\text{availablePlaces} = \text{capacity} - \text{count(Enrollments)}$. In the Sequence Diagram, the controller calls `incrementEnrollment()`. If `count(Enrollments)` is calculated directly from the database or relationship association, manually incrementing a counter introduces state redundancy and risk of drift.
+* **Correction:** Either remove `incrementEnrollment()` and rely strictly on creating the `Enrollment` link (which automatically decrements `availablePlaces` via the derived invariant), or document `incrementEnrollment()` as a domain operation that internally attaches/links the new `Enrollment`.
+
+#### Issue 3: Missing Association Navigation/Linkage during Creation (Sequence & Class Diagram)
+
+* **Affected Element:** Message 16 (`controller -> enrollment ** : create(studentId, offeringId)`).
+* **Rules & Criteria:** **R4** / **AC-03, AC-04**.
+* **Impact:** The sequence diagram shows the controller instantiating `Enrollment` directly via parameter IDs (`studentId`, `offeringId`). However, in the Class Diagram, `Enrollment` is linked via binary associations to `Student` (`1` to `0..*`) and `CourseOffering` (`1` to `0..*`). Creating a bare `Enrollment` instance without passing object references or establishing domain links leaves the graph disconnected.
+* **Correction:** Pass object references or delegate enrollment creation directly to `CourseOffering` (e.g., `offering.createEnrollment(student)`), which maintains encapsulation and automatically links the association.
+
+---
+
+### Optional Design Choices & Architectural Improvements
+
+1. **Information Leakage via Domain Object:**
+* *Observation:* Message 9 `checkAvailabilityAndDuplicate(studentId)` combines both availability and duplicate checks into a single query returning a status string.
+* *Recommendation:* To improve cohesion, consider separating these or having `CourseOffering` act as an Information Expert (GRASP) that accepts a `register(student)` request directly rather than having `RegistrationController` orchestrate creation and mutation steps step-by-step.
+
+
+2. **Attribute Naming Consistency:**
+* *Observation:* In the Sequence Diagram, message 5 returns `availablePlaces`, whereas the Class Diagram defines `getAvailablePlaces() : Integer`.
+* *Recommendation:* Ensure naming conventions match precisely across static and dynamic views (e.g., calling `getAvailablePlaces()` in sequence diagrams).
+
+
+
+---
+
+## 3. Walkthrough of the Four Validation Cases
+
+| Scenario | Execution Flow & Path | Result / Status | Validation Notes |
+| --- | --- | --- | --- |
+| **Case 1: Available Places** <br>
+
+<br>*(AC-01, AC-03)* | 1. Browse catalog $\rightarrow$ `offering` returns details with `availablePlaces > 1`. <br>
+
+<br>2. Student registers $\rightarrow$ `checkAvailabilityAndDuplicate` returns `Status: OK`. <br>
+
+<br>3. Controller creates `Enrollment`, updates offering state, and confirms. | **PASS** | Meets **R1, R2, R4, AC-03**. Creation and availability updates complete cleanly. |
+| **Case 2: Exactly One Place** <br>
+
+<br>*(AC-04)* | 1. Browse catalog $\rightarrow$ `availablePlaces == 1`. <br>
+
+<br>2. Student registers $\rightarrow$ `checkAvailabilityAndDuplicate` returns `Status: OK`. <br>
+
+<br>3. `Enrollment` created $\rightarrow$ `availablePlaces` decreases from 1 to 0. <br>
+
+<br>4. Confirmation returned. | **PASS** | Meets **AC-04**. Boundary condition handled without off-by-one errors. |
+| **Case 3: Full Course (Stale View)** <br>
+
+<br>*(AC-05)* | 1. Student views catalog when `availablePlaces == 1`. <br>
+
+<br>2. Another process fills the place. <br>
+
+<br>3. Student submits registration $\rightarrow$ Atomic boundary rechecks state. <br>
+
+<br>4. `checkAvailabilityAndDuplicate` returns `Course Full (availablePlaces == 0)`. <br>
+
+<br>5. Controller branches to `Failure: Course Full` $\rightarrow$ Rejects with `"course full"`. | **PASS** | Meets **R2, R5, AC-05**. Recheck prevents overbooking and returns clear rejection without creating an `Enrollment`. |
+| **Case 4: Duplicate Registration** <br>
+
+<br>*(AC-06)* | 1. Student already has an active `Enrollment` for `offeringId`. <br>
+
+<br>2. Student submits repeat registration request. <br>
+
+<br>3. `checkAvailabilityAndDuplicate` checks existing enrollments for `studentId`. <br>
+
+<br>4. Returns `Status: Already Enrolled`. <br>
+
+<br>5. Branches to `Failure: Already Enrolled` $\rightarrow$ Rejects with `"already enrolled"`. | **PASS** | Meets **R3, R5, AC-06**. Enforces uniqueness constraint defined in the Class Diagram note. |
+
+---
+
+## 4. Summary of Recommended Corrections
+
+```plantuml
+' Corrected Deactivation Pattern for Sequence Diagram Alt Branch:
+alt Failure: Already Enrolled (R3, R5 / AC-06)
+    offering --> controller : Status: Already Enrolled
+    deactivate offering
+    controller --> ui : reject("already enrolled")
+    ui --> student : display message "already enrolled"
+
+else Failure: Course Full (R2, R5 / AC-05)
+    offering --> controller : Status: Course Full
+    deactivate offering
+    controller --> ui : reject("course full")
+    ui --> student : display message "course full"
+
+else Success: Place Available & Not Enrolled (R2, R4 / AC-03, AC-04)
+    offering --> controller : Status: OK
+    deactivate offering
+    controller -> enrollment ** : create(studentId, offeringId)
+    ' Note: availablePlaces automatically recalculates from Enrollment count
+    controller --> ui : confirmRegistration(enrollmentDetails)
+    deactivate controller
+    ui --> student : display confirmation
+    deactivate ui
+end
+
+```
 ~~~~
 
 ### B4 — Focused revision (Prompt D)
 
-- **Tool:** (write here)
-- **Model:** (write here)
-- **Date:** (write here)
+- **Tool:** Gemini
+- **Model:** Gemini 2.5 Flash
+- **Date:** 2026-10-18
 - **Purpose:** apply my accepted review decisions
 
 **Prompt:**
 
 ~~~~text
-(paste here)
+Revise the UML sources using only my accepted review decisions: (1) close every activation bar in all three alt branches, not only offering: offering, controller and ui; (2) remove incrementEnrollment() and keep availability derived as capacity minus the number of Enrollments, and show the updated availablePlaces in the confirmation returned after the Enrollment is created; (3) rename the alt branches to exactly "alt already enrolled", "else course full" and "else not enrolled and places left", with no rule IDs and no square brackets in the labels; (4) add a selectOffering message from the student after the catalog is displayed and before the registration request, and use the word "offering" instead of "section" in all sequence messages. Keep justified existing elements and explain each change.
+Preserve the agreed scope and rule IDs. Return both updated PlantUML blocks and a concise change log. Flag any unresolved issue.
+Approved requirements: US-01 — Browse offerings. US-01: As a student, I want to browse the course catalog for a semester, so that I can see the available offerings and their remaining places before I choose one. AC-01 (R1): Given a signed-in student opens the catalog for one semester, When the list of offerings is shown, Then each offering displays the course code, title, offering and available places. AC-02 (R1): Given an offering has 0 available places, When a student views the catalog, Then the offering is shown with 0 available places and no place is reserved for the student. US-02 — Register for an offering. US-02: As a student, I want to register for a specific course offering, so that I get a place in that section. AC-03 (R2, R3, R4): Given an offering has available places and the student has no enrollment in it, When the student requests registration, Then the system creates exactly one Enrollment linking the student and the offering, decreases the available places by 1 and returns a confirmation. AC-04 (R2, R3, R4): Given an offering has exactly 1 available place and the student has no enrollment in it, When the student requests registration, Then the system creates exactly one Enrollment, the available places become 0 and a confirmation is returned. US-03 — Receive a clear rejection. US-03: As a student, I want to get a clear message when my registration cannot be completed, so that I understand why it was declined. AC-05 (R2, R5): Given the catalog showed a place in an offering but its current enrollment count now equals its capacity, When the student requests registration, Then the system rejects the request with "course full", creates no Enrollment and leaves the enrollment count unchanged. AC-06 (R3, R5): Given a student already has an enrollment in an offering, When the same student requests registration for that offering again, Then the system rejects the request with "already enrolled", creates no new Enrollment and leaves the enrollment count unchanged.
+Original sources:
+--- models/original/sequence.puml ---
+@startuml
+autonumber
+actor "Student" as student
+participant ":CatalogUI" as ui
+participant ":RegistrationController" as controller
+participant ":CourseOffering" as offering
+participant ":Enrollment" as enrollment
+
+== US-01: Browse Catalog (R1) ==
+student -> ui : browseCatalog(semester)
+activate ui
+ui -> controller : getOfferings(semester)
+activate controller
+controller -> offering : getDetailsAndAvailability()
+activate offering
+offering --> controller : courseCode, title, section, availablePlaces
+deactivate offering
+controller --> ui : list of offering details
+deactivate controller
+ui --> student : display catalog (code, title, section, availablePlaces)
+deactivate ui
+
+== US-02 & US-03: Register for Offering (R2 - R5) ==
+student -> ui : requestRegistration(studentId, offeringId)
+activate ui
+ui -> controller : registerStudent(studentId, offeringId)
+activate controller
+
+note over controller, offering
+  <b>Atomic Operation Boundary</b>
+  Final state checks (capacity, duplicate check) and enrollment creation
+  must execute atomically to prevent race conditions on the last available place.
+end note
+
+controller -> offering : checkAvailabilityAndDuplicate(studentId)
+activate offering
+
+alt Failure: Already Enrolled (R3, R5 / AC-06)
+    offering --> controller : Status: Already Enrolled
+    controller --> ui : reject("already enrolled")
+    ui --> student : display message "already enrolled"
+
+else Failure: Course Full (R2, R5 / AC-05)
+    offering --> controller : Status: Course Full (availablePlaces == 0)
+    controller --> ui : reject("course full")
+    ui --> student : display message "course full"
+
+else Success: Place Available & Not Enrolled (R2, R4 / AC-03, AC-04)
+    offering --> controller : Status: OK
+    controller -> enrollment ** : create(studentId, offeringId)
+    controller -> offering : incrementEnrollment()
+    offering --> controller : updated
+    deactivate offering
+    controller --> ui : confirmRegistration(enrollmentDetails)
+    deactivate controller
+    ui --> student : display confirmation
+    deactivate ui
+end
+
+@enduml
+--- models/original/classes.puml ---
+@startuml
+skinparam classAttributeIconSize 0
+
+class Student {
+  - studentId : String
+  - name : String
+  - email : String
+}
+
+class Course {
+  - courseCode : String
+  - title : String
+  - description : String
+}
+
+class CourseOffering {
+  - offeringId : String
+  - semester : String
+  - section : String
+  - capacity : Integer {capacity > 0}
+  + getAvailablePlaces() : Integer
+}
+
+class Enrollment {
+  - enrollmentId : String
+  - registeredAt : DateTime
+}
+
+Course "1" -- "0..*" CourseOffering : defines >
+Student "1" -- "0..*" Enrollment : makes >
+CourseOffering "1" -- "0..*" Enrollment : has >
+
+note top of CourseOffering
+  <b>Capacity Constraint:</b>
+  capacity > 0
+  availablePlaces = capacity - count(Enrollments)
+  count(Enrollments) <= capacity
+end note
+
+note bottom of Enrollment
+  <b>Uniqueness Constraint (R3):</b>
+  A Student can have at most 1 Enrollment per CourseOffering.
+  Unique combination: {studentId, offeringId}
+end note
+
+@enduml
+My review decisions and evidence:
+1. Accepted, modified: in the original, deactivate offering stands only in the success branch. The critique named only offering, but controller and ui also stay active after both rejection branches. Evidence: rendered original-sequence.png, bars not closed in the first two alt branches. Rule R5.
+2. Accepted: incrementEnrollment() stores a count while availability is also derived as capacity minus the number of Enrollments, so the two values could drift apart in T2 (last place). Remove the call, keep availability derived, and show the updated availablePlaces in the confirmation so R4 "update availability" stays visible. Rules R4, R2.
+3. Modified (my own inspection): the original alt labels are "Failure: Already Enrolled (R3, R5 / AC-06)", "Failure: Course Full (R2, R5 / AC-05)" and "Success: Place Available & Not Enrolled (R2, R4 / AC-03, AC-04)". Rename to exactly: alt already enrolled, else course full, else not enrolled and places left. Rules R3, R2, R4.
+4. Modified (my own inspection): there is no message where the student selects an offering, and the sequence says "section" where R1 and AC-01 say "offering". Add selectOffering after the catalog is displayed and use "offering" in messages. Rule R1.
+Rejected, do not change: (a) keep RegistrationController creating the Enrollment with create(studentId, offeringId), do not move creation into CourseOffering; (b) keep RegistrationController orchestrating the checks, do not turn CourseOffering into an information expert with register(student). Keep the class diagram, the atomic note and both constraint notes as they are, unless a change above requires otherwise.
 ~~~~
 
 **Response:**
 
 ~~~~text
-(paste here)
+### PlantUML Sources
+
+#### Sequence Diagram (`models/sequence.puml`)
+
+```plantuml
+@startuml
+autonumber
+actor "Student" as student
+participant ":CatalogUI" as ui
+participant ":RegistrationController" as controller
+participant ":CourseOffering" as offering
+participant ":Enrollment" as enrollment
+
+== US-01: Browse Catalog (R1) ==
+student -> ui : browseCatalog(semester)
+activate ui
+ui -> controller : getOfferings(semester)
+activate controller
+controller -> offering : getDetailsAndAvailability()
+activate offering
+offering --> controller : courseCode, title, offering, availablePlaces
+deactivate offering
+controller --> ui : list of offering details
+deactivate controller
+ui --> student : display catalog (code, title, offering, availablePlaces)
+deactivate ui
+
+student -> ui : selectOffering(offeringId)
+activate ui
+ui --> student : display offering details and registration prompt
+deactivate ui
+
+== US-02 & US-03: Register for Offering (R2 - R5) ==
+student -> ui : requestRegistration(studentId, offeringId)
+activate ui
+ui -> controller : registerStudent(studentId, offeringId)
+activate controller
+
+note over controller, offering
+  <b>Atomic Operation Boundary</b>
+  Final state checks (capacity, duplicate check) and enrollment creation
+  must execute atomically to prevent race conditions on the last available place.
+end note
+
+controller -> offering : checkAvailabilityAndDuplicate(studentId)
+activate offering
+
+alt alt already enrolled
+    offering --> controller : Status: Already Enrolled
+    deactivate offering
+    controller --> ui : reject("already enrolled")
+    deactivate controller
+    ui --> student : display message "already enrolled"
+    deactivate ui
+
+else else course full
+    offering --> controller : Status: Course Full (availablePlaces == 0)
+    deactivate offering
+    controller --> ui : reject("course full")
+    deactivate controller
+    ui --> student : display message "course full"
+    deactivate ui
+
+else else not enrolled and places left
+    offering --> controller : Status: OK
+    deactivate offering
+    controller -> enrollment ** : create(studentId, offeringId)
+    controller --> ui : confirmRegistration(enrollmentDetails, availablePlaces)
+    deactivate controller
+    ui --> student : display confirmation
+    deactivate ui
+end
+
+@endl
+
+```
+
+#### Class Diagram (`models/classes.puml`)
+
+```plantuml
+@startuml
+skinparam classAttributeIconSize 0
+
+class Student {
+  - studentId : String
+  - name : String
+  - email : String
+}
+
+class Course {
+  - courseCode : String
+  - title : String
+  - description : String
+}
+
+class CourseOffering {
+  - offeringId : String
+  - semester : String
+  - offering : String
+  - capacity : Integer {capacity > 0}
+  + getAvailablePlaces() : Integer
+}
+
+class Enrollment {
+  - enrollmentId : String
+  - registeredAt : DateTime
+}
+
+Course "1" -- "0..*" CourseOffering : defines >
+Student "1" -- "0..*" Enrollment : makes >
+CourseOffering "1" -- "0..*" Enrollment : has >
+
+note top of CourseOffering
+  <b>Capacity Constraint:</b>
+  capacity > 0
+  availablePlaces = capacity - count(Enrollments)
+  count(Enrollments) <= capacity
+end note
+
+note bottom of Enrollment
+  <b>Uniqueness Constraint (R3):</b>
+  A Student can have at most 1 Enrollment per CourseOffering.
+  Unique combination: {studentId, offeringId}
+end note
+
+@endl
+
+```
+
+---
+
+### Change Log & Explanations
+
+1. **Closed Activation Lifelines Across Alt Branches (Rule R5):**
+* **Change:** Added explicit `deactivate` statements for `:CourseOffering`, `:RegistrationController`, and `:CatalogUI` in both rejection branches (`alt already enrolled` and `else course full`), ensuring no execution lifelines hang after early returns.
+
+
+2. **Removed State Mutator `incrementEnrollment()` (Rules R2, R4):**
+* **Change:** Removed `controller -> offering : incrementEnrollment()` from the sequence diagram.
+* **Explanation:** `availablePlaces` is a derived property ($\text{capacity} - \text{count(Enrollments)}$) defined in the domain invariants. Eliminating manual counter mutation avoids state drift during concurrent operations while keeping updated availability explicitly included in `confirmRegistration(...)`.
+
+
+3. **Renamed Alt Branch Labels (Rules R2, R3, R4, R5):**
+* **Change:** Exact branch headers set to `alt alt already enrolled`, `else else course full`, and `else else not enrolled and places left`.
+* **Explanation:** Removed rule ID citations, requirement mappings, and square brackets directly from the diagram labels as specified.
+
+
+4. **Added Selection Message & Standardized Terminology (Rule R1):**
+* **Change:** Inserted `selectOffering(offeringId)` message between the catalog display and registration request. Replaced all occurrences of `section` with `offering` across messages, parameter payloads, and class attributes (`CourseOffering.offering`).
+
+
+5. **Preserved Architecture & Scope Boundaries:**
+* **Retained Elements:** Preserved `RegistrationController` orchestrating `create(studentId, offeringId)` directly rather than delegating domain creation to `CourseOffering`. Preserved the atomic transaction note, uniqueness notes, domain class structure, and rule IDs R1–R5 without adding out-of-scope workflows.
+
+
+
+---
+
+### Unresolved Issues Flag
+
+* **None.** All four review decisions have been applied to the PlantUML models while fully preserving rule IDs R1–R5, user stories US-01–US-03, and acceptance criteria AC-01–AC-06.
 ~~~~
 
 ## 12. Appendix C — Original diagrams

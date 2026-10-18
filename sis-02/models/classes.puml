@@ -21,7 +21,6 @@ class Course {
 class CourseOffering {
   - offeringId : String
   - semester : String
-  - section : String
   - capacity : Integer {capacity > 0}
   + getAvailablePlaces() : Integer
 }
