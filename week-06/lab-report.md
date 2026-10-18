@@ -15,7 +15,7 @@ grader find your answers by them. Add rows to any table; never remove its header
 | --- | --- |
 | Tool | Bolt.new |
 | Exact model | GLM 5.3 Flash |
-| Bolt project link (or `not shared`, and why) | |
+| Bolt project link (or `not shared`, and why) | https://bolt.new/p/72158651 |
 | Browser and version | Google Chrome 155.0.8059.40 (cohort: Stable) |
 | If you could not use Bolt.new: the tool you used instead, and why | |
 
@@ -28,14 +28,14 @@ Fill the first three columns now; fill the last one after Task 3.
 
 | # | What I expect to go wrong | AC it concerns | Was I right? (after Task 3) |
 | --- | --- | --- | --- |
-| 1 | | | |
-| 2 | | | |
+| 1 | The initial prompt asks for a room availability checker, but v1 might automatically create or save bookings when checking availability, violating the read-only behavior required by AC5. | AC5 |  |
+| 2 | v1 may fail to validate boundary time logic for slots, allowing requests where start == end or allowing a booking duration strictly exceeding 120 minutes without showing validation feedback. | AC1, AC2, AC6 | |
 
 **The initial prompt exactly as I sent it** — the deck's prompt with AC1–AC6 pasted in place of
 `[paste AC1–AC6]`, nothing else changed:
 
 ```text
-(paste here)
+Build a small responsive Smart Campus Room Availability Checker. Requirements: AC1: Accept a candidate interval only when 0 ≤ start < end ≤ 1440 and start is after the supplied current time. AC2: Reject a booking longer than 120 minutes. AC3: Reject the request when the selected room is blocked. AC4: Reject any interval that overlaps an existing booking; touching endpoints are allowed. AC5: Show a clear Available / Unavailable decision without changing the existing booking data. AC6: The page remains usable at desktop and narrow/mobile width and gives understandable validation feedback. Use fictional sample data only. Keep the implementation simple and within one-page scope. Do not add authentication, backend services, analytics, or unrelated features. After building, briefly list the main files/components you created.
 ```
 
 ---
@@ -43,24 +43,34 @@ Fill the first three columns now; fill the last one after Task 3.
 ## 3. Task 2 — prototype v1
 
 v1 export saved in `original/` and screenshot saved as `evidence/v1.png` **before** any cleanup
-prompt: yes / no
+prompt: yes
 
 **Bolt's list of the files/components it created, pasted unedited:**
 
-```text
-(paste here)
+```
+src/types.ts — shared types (Room, Booking, Verdict)
+src/sampleData.ts — 5 fictional rooms and 6 existing bookings
+src/availability.ts — the validation logic covering all 6 acceptance criteria
+src/App.tsx — the responsive single-page UI
+
 ```
 
 **What v1 does — one line per thing that works, or visibly does not:**
 
--
+- Builds and runs on the first try; the preview shows one page, "Smart Campus Room Availability".
+- Has a room dropdown, Start time, End time and an adjustable "Current time (sim)" field (default 09:00).
+- Shows a hint line under the inputs: max length 120 minutes, touching endpoints allowed.
+- Shows a "Room Details" panel with the selected room's current bookings; one sample room (Turing 110) is blocked.
+- Before any input the result area shows "Pick a room and a start/end time to see the availability result."
+- Footer states the day window 00:00–24:00 (1440 min) and "Sample data only".
+- No login, backend or Book button visible in the UI.
+- (fill after T1–T9) T1 touching: ... / T6 starts now: ... / T8 same check twice: ...
 
 **Repair prompt** (only if the first build did not run — the deck allows one, then the result is
 v1). Leave empty if you did not need it:
 
 ```text
 ```
-
 ---
 
 ## 4. Task 3 — the nine cases
