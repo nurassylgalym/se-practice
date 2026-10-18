@@ -24,27 +24,25 @@ assistant:
   model:                        # Gemini 2.5 Flash
                                 # if the tool does not show it, write: not displayed
 
-checker:                        # from your LAST run of python tests/check_sis.py
-  pass:
-  fail:
-  error:
-  commit:                       # git rev-parse --short HEAD, run right after that checker run
+checker:
+  pass: 44
+  fail: 0
+  error: 0
+  commit: <a7b4a43>
 
-counts:                         # copy from report.md; the validator re-measures every one
-  stories:                      # user stories with a statement (3)
-  criteria:                     # acceptance criteria with Given / When / Then (6)
-  exchanges:                    # B-sections in Appendix B (4 or more)
-  review_decisions:             # complete rows in section 7 (3 or more)
-  source_checks:                # complete rows in the source-checks table (2 or more)
-  explanation_words:            # "section 8 (Modeling explanation): N words"
-  reflection_words:             # "section 9 (Reflection): N words"
+counts:
+  stories: 3
+  criteria: 6
+  exchanges: 4
+  review_decisions: 9
+  source_checks: 2
+  explanation_words: 245
+  reflection_words: 194
 
-walkthroughs:                   # your verdict for each case in section 6: pass or fail
-  T1:
-  T2:
-  T3:
-  T4:
+walkthroughs:
+  T1: pass
+  T2: pass
+  T3: pass
+  T4: pass
 
-known_fails: []                 # the ID of every check that is still FAIL or ERROR in your last
-                                # run, e.g. [W1, SQ8] — and explain each one in report.md, as a row
-                                # of section 7. [] when the checker is clean.
+known_fails: []
