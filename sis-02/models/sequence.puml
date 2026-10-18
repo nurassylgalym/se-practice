@@ -1,0 +1,75 @@
+' SIS #02 — your FINAL sequence diagram goes here, as PlantUML (@startuml … @enduml).
+' Start from the AI's original in models/original/sequence.puml, apply your accepted review
+' decisions, then render it to models/img/sequence.png (or .svg). README section 5.
+
+@startuml
+autonumber
+actor "Student" as student
+participant ":CatalogUI" as ui
+participant ":RegistrationController" as controller
+participant ":CourseOffering" as offering
+participant ":Enrollment" as enrollment
+
+== US-01: Browse Catalog (R1) ==
+student -> ui : browseCatalog(semester)
+activate ui
+ui -> controller : getOfferings(semester)
+activate controller
+controller -> offering : getDetailsAndAvailability()
+activate offering
+offering --> controller : courseCode, title, offering, availablePlaces
+deactivate offering
+controller --> ui : list of offering details
+deactivate controller
+ui --> student : display catalog (code, title, offering, availablePlaces)
+deactivate ui
+
+student -> ui : selectOffering(offeringId)
+activate ui
+ui --> student : display offering details and registration prompt
+deactivate ui
+
+== US-02 & US-03: Register for Offering (R2 - R5) ==
+student -> ui : requestRegistration(studentId, offeringId)
+activate ui
+ui -> controller : registerStudent(studentId, offeringId)
+activate controller
+
+note over controller, offering
+  <b>Atomic Operation Boundary</b>
+  Final state checks (capacity, duplicate check) and enrollment creation
+  must execute atomically to prevent race conditions on the last available place.
+end note
+
+controller -> offering : checkAvailabilityAndDuplicate(studentId)
+activate offering
+
+alt already enrolled
+    offering --> controller : Status: Already Enrolled
+    deactivate offering
+    controller --> ui : reject("already enrolled")
+    deactivate controller
+    ui --> student : display message "already enrolled"
+    deactivate ui
+
+else course full
+    offering --> controller : Status: Course Full (availablePlaces == 0)
+    deactivate offering
+    controller --> ui : reject("course full")
+    deactivate controller
+    ui --> student : display message "course full"
+    deactivate ui
+
+else not enrolled and places left
+    offering --> controller : Status: OK
+    controller -> enrollment ** : create(studentId, offeringId)
+    controller -> offering : getAvailablePlaces()
+    offering --> controller : availablePlaces
+    deactivate offering
+    controller --> ui : confirmRegistration(enrollmentDetails, availablePlaces)
+    deactivate controller
+    ui --> student : display confirmation
+    deactivate ui
+end
+
+@enduml
