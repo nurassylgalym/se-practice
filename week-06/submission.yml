@@ -1,0 +1,43 @@
+schema: 1
+week: "06"
+
+student:
+  name: Galym Nurassyl
+  student_id: 26B030025          # ID из базы КБТУ
+  github: nurassylgalym
+
+assistant:
+  tool: Bolt
+  model: GLM 4.5 Flash
+  fallback_reason: none
+
+bolt:
+  project_url: https://bolt.new/p/72158651
+
+counts:
+  issues: 2
+  cleanup_prompts: 2
+  change_log_rows: 2
+  v1_matches: 3
+  final_matches: 9
+
+checker:
+  pass: 27
+  fail: 0
+  error: 0
+  commit: "c2759b6"              # Замените на результат команды git rev-parse --short HEAD
+  known_fails: []
+
+assumptions:
+  end_of_day: typed-24:00
+
+review_findings:
+  - "T6: v1 accepted a request starting exactly at the current time (09:00-09:30), so the page said Available; AC1 requires start strictly after the current time"
+  - "T3: v1 showed Turing 110 as a disabled option, so a request for a blocked room could not be made and no Unavailable decision appeared (AC3)"
+  - "v1: no sample room has 10:00-11:00 as its only booking, so T1, T2, T8 and T9 could not be set up on the page"
+  
+honesty:
+  v1_export_unedited: yes
+  screenshots_unedited: yes
+  can_explain_component_without_ai: yes
+  ai_usage_disclosed: yes
