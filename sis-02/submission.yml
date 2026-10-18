@@ -14,21 +14,21 @@ schema: 1
 assignment: "sis-02"            # do not edit
 
 student:
-  name:                         # Nurassyl Galym
-  student_id:                   # 26B030025
-  group:                        # CSCI2208 
-  github:                       # nurassylgalym
+  name: Nurassyl Galym
+  student_id: 26B030025
+  group: CSCI2208 
+  github: nurassylgalym
 
 assistant:
-  tool:                         # Gemini 
-  model:                        # Gemini 2.5 Flash
+  tool: Gemini 
+  model: Gemini 2.5 Flash
                                 # if the tool does not show it, write: not displayed
 
 checker:
   pass: 44
   fail: 0
   error: 0
-  commit: <a7b4a43>
+  commit: a7b4a43
 
 counts:
   stories: 3
