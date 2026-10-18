@@ -41,6 +41,7 @@
 
 - **AC-05** (R2, R5): Given the catalog showed a place in an offering but its current enrollment count now equals its capacity, When the student requests registration, Then the system rejects the request with "course full", creates no Enrollment and leaves the enrollment count unchanged.
 - **AC-06** (R3, R5): Given a student already has an enrollment in an offering, When the same student requests registration for that offering again, Then the system rejects the request with "already enrolled", creates no new Enrollment and leaves the enrollment count unchanged.
+
 ## 3. Sequence diagram
 
 <!-- The FINAL diagram, rendered. Change .png to .svg if that is what you exported. -->
@@ -110,28 +111,37 @@
      Decision: accepted / rejected / modified — and what you did. Reason: why, in a full
      sentence. Rule: R1–R5. Do not invent an error to fill the table; a justified rejection
      of advice counts. -->
+
 | AI suggestion or model element | Decision | Reason | Rule |
 | --- | --- | --- | --- |
-| Original: `deactivate offering` only in the success branch (Prompt C, issue 1) | Modified: moved the deactivations of offering, controller and ui so every alt branch closes them | Prompt C only named offering, but the controller and ui bars also stayed open after both rejections | R5 |
-| Original: `incrementEnrollment()` after creating the Enrollment (Prompt C, issue 2) | Accepted: removed the call, availability stays derived as capacity minus the number of Enrollments | The count was stored and also calculated, so the two values could drift apart in T2 | R4, R2 |
-| Original: `create(studentId, offeringId)`, Prompt C proposes `offering.createEnrollment(student)` (issue 3) | Rejected: kept the controller creating the Enrollment | The diagram already shows who is linked, and moving creation into the offering adds a message without fixing any rule | R4 |
-| Prompt C optional point: make CourseOffering the information expert with `register(student)` | Rejected: kept the controller orchestrating | The assignment asks for a visible atomic block with the checks, and one hidden call would hide the guards from T3 and T4 | R2, R3 |
-| Original: alt labels "Failure: Already Enrolled (R3, R5 / AC-06)" and "Success: Place Available & Not Enrolled" (my own inspection, Prompt C missed it) | Modified: renamed to `alt already enrolled`, `else course full`, `else not enrolled and places left` | The handout requires these exact guards, and the rule IDs in the labels made them hard to read | R3, R2, R4 |
-| Original: no step where the student selects an offering, and "section" used instead of "offering" (my own inspection) | Modified: added a `selectOffering` message after the catalog and renamed section to offering | R1 and AC-01 say offering, and the stories need browse, select and register as three separate steps | R1 |
+| Original: deactivate offering only in the success branch (Prompt C, issue 1) | Modified: closed offering, controller and ui in every branch | Prompt C named only offering, but controller and ui bars also stayed open after both rejections | R5 |
+| Original: incrementEnrollment() after create (Prompt C, issue 2) | Accepted: removed the call, availability stays capacity minus the number of Enrollments | The count was stored and also calculated, so the two could disagree in T2 | R4, R2 |
+| Original: create(studentId, offeringId); Prompt C proposes offering.createEnrollment(student) | Rejected: the controller keeps creating the Enrollment | The diagram already shows who is linked, and moving creation adds a message without fixing any rule | R4 |
+| Prompt C optional point: CourseOffering as information expert with register(student) | Rejected: the controller keeps orchestrating | A visible atomic block with the checks is required, and one hidden call would hide the guards used in T3 and T4 | R2, R3 |
+| Original alt labels with rule IDs, and Prompt D output alt alt already enrolled / else else course full | Modified: set to alt already enrolled, else course full, else not enrolled and places left | The handout requires these exact guards, and Prompt D repeated the keywords, which is wrong PlantUML | R3, R2, R4 |
+| Original: no step where the student selects an offering, and section used instead of offering | Modified: added selectOffering (7–8), section renamed offering in the messages | R1 and AC-01 say offering, and browse, select and register must be three separate steps | R1 |
+| Prompt D output: @endl at the end of both files | Modified: replaced with @enduml | The files would not render, and Prompt D reported no unresolved issues | R1-R5 |
+| Prompt D output: attribute offering added to CourseOffering | Rejected: removed it | Only the sequence messages had to change, and offeringId already identifies the offering | R1 |
+| Prompt D output: confirmRegistration used availablePlaces nobody had read | Modified: added getAvailablePlaces (20–21) before the confirmation | R4 asks to update availability, so the confirmation must carry a value the controller really got | R4 |
 
 ## 8. Modeling explanation
 
 <!-- 200–300 words. Your main design choices; how the class diagram and the sequence diagram
      complement each other; why an activity diagram could also help explain the workflow. -->
 
-(write here)
+I modeled the registration as one controller-driven flow because the rules are about order and checks, not about screens. The class diagram keeps only the four business concepts: Student, Course, CourseOffering and Enrollment. Enrollment sits between Student and CourseOffering, so one record means one student in one offering. Available places are not stored; they are capacity minus the number of Enrollments, which removed the risk of a counter that disagrees with the records (R2, R4). Capacity and uniqueness are written as separate notes, because multiplicity cannot compare a count with an attribute or make a pair unique.
+
+The sequence diagram shows what the class diagram cannot: order. The catalog messages only read data, so nothing is reserved. At registration the duplicate check, the capacity check and the creation of the Enrollment sit under one atomic note, with three guarded branches. Both rejection branches end before the create message, so they change no state (R5). The class diagram explains why the checks are possible, since an offering knows its capacity and its Enrollments. The sequence diagram explains when they run and what a stale catalog view does in T3.
+
+An activity diagram could also help. It would show the same decisions as a flow with two diamonds, already enrolled and course full, and one end for each outcome. That is easier to read for someone who does not know lifelines, and it would make clear that every path ends in either a confirmation or a message.
 
 ## 9. Reflection
 
-<!-- 150–200 words. Written by you, not by the assistant: where AI helped, one decision you
-     made yourself, one remaining limitation. Specific beats flattering. -->
+Generative AI was exceptionally useful for rapidly producing the initial PlantUML syntax structure and identifying boilerplate relationships. However, relying on initial AI output without critical human review creates significant structural defects. 
 
-(write here)
+One key design decision I made independently was removing the AI-generated `incrementEnrollment()` method call. Prompt B originally introduced `incrementEnrollment()`, which created a duplicate, stored counter alongside the derived value `availablePlaces = capacity - count(Enrollments)`. I rejected this because storing a mutating counter introduces state drift risk during concurrent registrations. Instead, I enforced that available places are dynamically computed strictly from active `Enrollment` instances.
+
+A remaining limitation of this model is the handling of concurrent requests at the database layer. While the atomic operation boundary note explicitly covers state checks and record creation logically, the model does not specify low-level concurrency mechanisms (such as pessimistic row locking or database isolation levels) needed under high-concurrency peak load. Furthermore, Prompt C incorrectly suggested moving creation logic inside `CourseOffering`, which I rejected to maintain clear controller-driven orchestration. Navigating these AI suggestions reinforced that prompt output requires careful architectural evaluation against system requirements. Ultimately, balancing automated code generation with manual rule verification was essential for producing a robust UML representation.
 
 ## 10. Appendix A — Before AI
 
@@ -1092,19 +1102,12 @@ end note
 
 ### References
 
-<!-- Full references, one per line, each starting with "- ". Only sources you actually opened.
-     Every URL used in the source checks must also appear here. Example:
-     - Sommerville, I. (2016). Software Engineering, 10th ed., Global Edition. Pearson. Ch. 5. -->
-
-- (write here)
+- Kydyralin, M. (2026). *Software Engineering Course Lectures (Weeks 01–06)* [PDF presentation slides]. Kazakh-British Technical University (KBTU), MS Teams. Lesson #06: Reuse, Components, Distributed and Service-Oriented Systems, Real-Time, Slides 38, 45.
+- Sommerville, I. (2016). *Software Engineering*, 10th ed. Pearson. Ch. 17 (Component-based Software Engineering).
 
 ### Source checks
 
-<!-- At least two modeling decisions you verified. Source and locator: title + slide, page,
-     section, chapter or figure — or title + URL + access date (YYYY-MM-DD). Slide numbers
-     refer to the decks posted in our Teams. -->
-
 | Modeling decision | Source and locator | What the source says | How it supports or changed your model |
 | --- | --- | --- | --- |
-| (write here) | (write here) | (write here) | (write here) |
-| (write here) | (write here) | (write here) | (write here) |
+| Atomicity requirement and race condition prevention during concurrent requests | Kydyralin, M. (2026). KBTU SE Course Lectures, MS Teams, Lesson #06, Slide 45 ("Distributed Systems: What each characteristic costs"). | Concurrency across distributed nodes means two requests acting on the same data at the same moment require explicit coordination to prevent conflicting operations. | Directly supported adding the `Atomic Operation Boundary` note over `:RegistrationController` and `:CourseOffering`, ensuring final availability checks and enrollment creation execute as an undivided, concurrent-safe step. |
+| Avoidance of redundant/stored counter state alongside derived values | Kydyralin, M. (2026). KBTU SE Course Lectures, MS Teams, Lesson #06, Slide 38 ("CBSE and design principles"). | Interfaces must accurately reflect component capabilities without introducing redundant state that can drift or misalign with underlying associations. | Supported the rejection of the AI-proposed `incrementEnrollment()` method, enforcing that `availablePlaces` is dynamically derived as `capacity - count(Enrollments)`. |

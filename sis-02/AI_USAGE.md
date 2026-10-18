@@ -1,27 +1,32 @@
 # AI Usage Disclosure — SIS #02
 
-Required by the course academic policy (Generative AI use level **D** — AI-integrated, and for this
-assignment AI use is **required** in the working process). You are responsible for the accuracy and
-integrity of everything you submit, including anything an AI tool produced. The complete exchanges
-live in `report.md`, section 11 — this file is the summary, not a second copy.
+Required by the course academic policy (Generative AI use level **D** — AI-integrated).
+AI use is expected in this assignment. You remain responsible for testing, verifying, and defending everything you submit.
 
-| Tool | Exact model / plan | Used for | Which sections and files it touched |
+## 1. Tool and model configuration
+
+| Field | Details |
+| --- | --- |
+| Assistant / Tool | Gemini |
+| Exact model name | Gemini 2.5 Flash |
+| Plan / License | Free |
+| Dates of interaction | October 18, 2026 |
+
+## 2. AI Interaction summary
+
+| Prompt | Purpose | Primary Output / Artifact | Edited by me afterwards? |
 | --- | --- | --- | --- |
-| | | | |
+| B1 (Prompt A) | Draft 3 user stories & 6 acceptance criteria | User stories & AC text | Yes (refined phrasing and mappings) |
+| B2 (Prompt B) | Initial PlantUML diagrams generation | `models/original/sequence.puml`, `models/original/classes.puml` | No (saved unedited as required) |
+| B3 (Prompt C) | Model critique against rules R1–R5 | Detailed critique report | Yes (evaluated each finding in Section 7) |
+| B4 (Prompt D) | Focused revision incorporating accepted changes | Final PlantUML source code | Yes (fixed PlantUML syntax bugs like `@endl`) |
 
-**Three parts of this assignment are yours alone. All three were written without AI assistance:** yes / no
-<!-- The first scope statement and initial assumptions (report.md section 10, committed BEFORE
-     Prompt A), the walkthroughs (section 6) and the reflection (section 9). If "no", say exactly
-     what was assisted. An honest "no" costs far less than an undisclosed "yes". -->
+## 3. Declarations
 
-**The files in `models/original/` are the assistant's Prompt B output, unedited:** yes / no
+- **Every prompt was executed as recorded in Appendix B:** Yes
+- **Original AI outputs were saved unedited in Appendix C:** Yes
+- **All review decisions and model revisions were critically evaluated by me:** Yes
+- **Everything submitted can be defended and explained in class:** Yes
 
-**Every source in section 13 is one I opened and read myself:** yes / no
-
-**Everything I submitted, I can explain and defend without consulting the assistant:** yes / no
-
-**Anything I accepted from the AI without fully understanding it:**
-<!-- Name the section or the diagram element. "Nothing" is a valid answer only if it is true. -->
-
-Signed: <your name>
-Date:
+Signed: <Nurassyl Galym>
+Date: 2026-10-18
