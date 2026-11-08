@@ -194,6 +194,7 @@ requests* · *mocked booking function*, or your own) and the AC that decides it.
 | 2 | Expected values of T01–T14, X1, X2 | Checked for "expected = current output". Every value matches what I got from the ACs in section 3 before generating. None were copied from the code. | accept | AC1–AC4 |
 | 3 | `AC5: Available decision leaves booking data untouched` | Checked for "no exception occurred". It calls canBook on an Available request (660–720), asserts exactly true and compares bookings with a structuredClone copy taken before the call. | accept | AC5 |
 | 4 | Imports | Checked for "mocked booking function". It imports the real `canBook` from `./booking`, the same module App.tsx uses. No vi.mock. | accept | AC5, the page uses the same function |
+| 5 | The assistant's claim that all 17 tests passed | It says it ran the suite against a copy of canBook. That is not evidence: I did not see that run, and the copy may differ from my file. Own weakness. | reject | Lab rule: only a real terminal run counts |
 
 ---
 
@@ -206,7 +207,31 @@ The **real** terminal output of the first run of the first suite, pasted unedite
 is not a run.
 
 ```text
-(paste here)
+ RUN  v3.2.4 C:/Users/Nurassyl Galym/Desktop/KBTU/Software Engineering/Lab Week 1/se-practice/week-07/app
+
+ ✓ src/booking.test.ts (17 tests) 8ms
+   ✓ canBook > 'T01' ['AC4'] 'touching after': 660–720 → true 4ms
+   ✓ canBook > 'T02' ['AC1'] 'starts now': 540–570 → false 0ms
+   ✓ canBook > 'T03' ['AC1'] 'zero duration': 720–720 → false 0ms
+   ✓ canBook > 'T04' ['AC1'] 'reversed': 750–720 → false 0ms
+   ✓ canBook > 'T05' ['AC1'] 'past day end': 1380–1441 → false 0ms
+   ✓ canBook > 'T06' ['AC2'] 'exactly 120 minutes': 720–840 → true 0ms
+   ✓ canBook > 'T07' ['AC2'] '121 minutes': 720–841 → false 0ms
+   ✓ canBook > 'T08' ['AC4'] 'touching before': 570–600 → true 0ms
+   ✓ canBook > 'T09' ['AC4'] 'partial overlap': 630–690 → false 0ms
+   ✓ canBook > 'T10' ['AC4'] 'contains booking': 570–690 → false 0ms
+   ✓ canBook > 'T11' ['AC4'] 'inside booking': 615–645 → false 0ms
+   ✓ canBook > 'T12' ['AC4'] 'identical': 600–660 → false 0ms
+   ✓ canBook > 'T13' ['AC3'] 'room blocked': 660–720 → false 0ms
+   ✓ canBook > 'T14' ['AC4'] 'no bookings': 630–690 → true 0ms
+   ✓ canBook > 'X1' ['AC1'] 'ends exactly at 1440': 1380–1440 → true 0ms
+   ✓ canBook > 'X2' ['AC4'] 'gap between two bookings': 660–720 → true 0ms
+   ✓ canBook > AC5: Available decision leaves booking data untouched 1ms
+
+ Test Files  1 passed (1)
+      Tests  17 passed (17)
+   Start at  22:02:19
+   Duration  3.86s (transform 42ms, setup 0ms, collect 58ms, tests 8ms, environment 0ms, prepare 594ms)
 ```
 
 **Each failure, diagnosed** (the deck's table: import/runner error · assertion mismatch · result
@@ -214,7 +239,7 @@ changing per run · no tests discovered). Write `none` in the first row if nothi
 
 | Failing test | Observed failure | First check | Test repair or implementation fix? | Action taken |
 | --- | --- | --- | --- | --- |
-| | | | | |
+| none | All 17 tests passed on the first run. | — | — | No fix needed. The suite still has to be rewritten without `it.each` (section 5, row 1). |
 
 ### 6.2 The improvement prompt
 
