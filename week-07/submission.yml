@@ -1,0 +1,57 @@
+# week-07/submission.yml — your declaration for this lab.
+#
+# Facts only. Every explanation goes in lab-report.md; nothing here repeats prose.
+# Fill every value. Check it before you push:
+#
+#     python tests/validate_submission.py
+#
+# The validator checks shape, never quality. A green run is the floor, not the grade.
+# If you cannot run Python, fill the file by hand against the comments — a malformed
+# file costs you nothing if the content is there.
+
+schema: 1
+week: "07"
+
+student:
+  name: Nurassyl Galym
+  student_id: 26B030025    # as in KBTU records, e.g. 00X000000
+  github: nurassylgalym    # your GitHub username, the one that owns the repo
+
+assistant:
+  tool: Claude
+  model: Claude Opus 5.5
+
+project:
+  baseline: week-06
+  bolt_url: not-shared
+  vitest: 3.2.4
+
+counts:
+  tests_first: 1            # the checker counts test() calls; the first suite runs 17 tests, but 16 of them sit inside one it.each
+  tests_final: 24
+  first_run_failed: 0
+  review_decisions: 5
+  mutants_detected: 3
+
+checker:
+  pass: 33
+  fail: 0
+  error: 0
+  commit: fd3a7f5          # git rev-parse --short HEAD
+  known_fails: []
+
+assumptions:
+  invalid_existing_booking: returns-true
+
+review_findings:
+  - "Suite structure: the first suite ran T01-T14, X1 and X2 through one it.each, which the lab rules forbid; I rewrote every case as its own test() with the ID in the title"
+  - "AC1: the first suite always used now = 540, so a canBook that hard-coded 540 would pass; B02 and B03 move now to 700"
+  - "AC4: every overlap case in the first suite clashed with the first booking of a sorted list; B06 and B07 cover the second booking and an unsorted list"
+  - "M2: touching as overlap was detected by T01, T08, X2 and AC5; M1 by T06 and M3 by T13, so all three mutants were caught"
+  - "AC4 and booking.ts: canBook returns true for a request of 660-720 against a reversed existing booking 700-650, and no AC decides this case"
+
+honesty:
+  first_suite_unedited: yes
+  outputs_unedited: yes
+  mutants_restored: yes
+  ai_usage_disclosed: yes
