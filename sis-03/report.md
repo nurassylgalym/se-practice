@@ -15,8 +15,8 @@
 | --- | --- |
 | Coding assistant (tool) | Gemini (web) |
 | Coding assistant model | Gemini 2.5 Flash |
-| Bolt.new model | not displayed |
-| Bolt project link | not-shared |
+| Bolt.new model | GLM 5.3 Flash |
+| Bolt project link | https://bolt.new/p/72158651 |
 | Language | Python 3.12 |
 | Path | A |
 | Python v1 from | week-05 |
@@ -82,17 +82,18 @@
 
 | Branch in v1 (quoted) | AC | Satisfies it? | Why |
 | --- | --- | --- | --- |
-| (write here) | (write here) | (write here) | (write here) |
-| (write here) | (write here) | (write here) | (write here) |
-| (write here) | (write here) | (write here) | (write here) |
-| (write here) | (write here) | (write here) | (write here) |
+| `if not (0 <= start < end <= 1440 and start >= now): return False` | AC1 | No | Day bounds and order are right, but `start >= now` lets a request that starts exactly now pass. AC1 says strictly after now. T6 (540-570, now 540) returned True on v1. Final uses `start <= now` -> reject. |
+| `if (end - start) > 120: return False` | AC2 | Yes | `>` rejects 121 and keeps exactly 120. T4 True, T5 False on v1. |
+| `if blocked: return False` | AC3 | Yes | Any request on a blocked room is rejected, whatever the time. T3 False on v1. |
+| `for b_start, b_end in existing: if start < b_end and end > b_start: return False` | AC4 | Yes | Strict `<` and `>` mean touching endpoints are not overlap, and the loop checks every booking. T1 True, T2 False, T10 False on v1. |
+| `return True` | AC5 | Yes | Returns a real bool. v1 only reads `existing`, never changes it. T11 second call still True. |
 
 ## 4. Prototype v1 in Bolt.new
 
-**Prompt as sent:**
+**Prompt as sent:** (Source: week-06, sent 2026-10-18)
 
 ~~~~text
-(paste here)
+Build a small responsive Smart Campus Room Availability Checker. Requirements: AC1: Accept a candidate interval only when 0 ≤ start < end ≤ 1440 and start is after the supplied current time. AC2: Reject a booking longer than 120 minutes. AC3: Reject the request when the selected room is blocked. AC4: Reject any interval that overlaps an existing booking; touching endpoints are allowed. AC5: Show a clear Available / Unavailable decision without changing the existing booking data. AC6: The page remains usable at desktop and narrow/mobile width and gives understandable validation feedback. Use fictional sample data only. Keep the implementation simple and within one-page scope. Do not add authentication, backend services, analytics, or unrelated features. After building, briefly list the main files/components you created.
 ~~~~
 
 <!-- Main generated files or components, with their path inside web/original/
@@ -100,12 +101,20 @@
 
 | Generated file or component | Path | Its role |
 | --- | --- | --- |
-| (write here) | (write here) | (write here) |
-| (write here) | (write here) | (write here) |
+| Main page UI | `src/App.tsx` | Room dropdown, start/end/current-time inputs, verdict card, room details with today's bookings |
+| Availability logic | `src/availability.ts` | `validateInterval` (AC1), `validateDuration` (AC2), `checkRoomBlocked` (AC3), `checkOverlap` (AC4); `evaluateAvailability` runs them in order |
+| Sample data | `src/sampleData.ts` | 5 fictional rooms (Turing 110 blocked) and 6 fictional bookings |
+| Types | `src/types.ts` | `Room`, `Booking`, `Verdict` |
 
 **What v1 does:**
 
-- (write here)
+- One page, "Smart Campus Room Availability": pick a room, start, end, and a "Current time (sim)" field (default 09:00).
+- Shows Available / Unavailable with a reason line, and the selected room's existing bookings.
+- AC1 bug: `validateInterval` uses `start < currentTime`, so a start equal to now is accepted (T6).
+- Blocked room Turing 110 is a disabled option in the dropdown, so the AC3 rejection can't be reached from the UI.
+- No sample room has 10:00-11:00 as its only booking, and bookings can't be edited, so the base data of T1/T2/T10/T11 can't be set up.
+- `package.json` lists `@supabase/supabase-js` although nothing uses it: a database client, out of scope.
+- Time inputs are `<input type="time">`, which stop at 23:59, so 24:00 can't be entered (T8, T9).
 
 ## 5. Test cases — executed on both artifacts
 
@@ -119,17 +128,17 @@
 
 | Case | Name | Input | Expected | Python v1 | Python final | Page v1 | Page final |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| T1 | Touching | 660–720 | Available | | | | |
-| T2 | Overlap | 630–690 | Unavailable | | | | |
-| T3 | Blocked | 660–720, blocked | Unavailable | | | | |
-| T4 | Exactly 120 min | 720–840 | Available | | | | |
-| T5 | 121 min | 720–841 | Unavailable | | | | |
-| T6 | Starts now | 540–570 | Unavailable | | | | |
-| T7 | Reversed | 720–660 | Unavailable | | | | |
-| T8 | Ends at midnight | 1380–1440 | Available | | | | |
-| T9 | Past midnight | 1380–1441 | Unavailable | | | | |
-| T10 | Second booking | 720–780, existing (600–660), (700–760) | Unavailable | | | | |
-| T11 | Same check twice | 660–720, twice | Available | | | | |
+| T1 | Touching | 660–720 | Available | True | True | | |
+| T2 | Overlap | 630–690 | Unavailable | False | False | | |
+| T3 | Blocked | 660–720, blocked | Unavailable | False | False | | |
+| T4 | Exactly 120 min | 720–840 | Available | True | True | | |
+| T5 | 121 min | 720–841 | Unavailable | False | False | | |
+| T6 | Starts now | 540–570 | Unavailable | True | False | | |
+| T7 | Reversed | 720–660 | Unavailable | False | False | | |
+| T8 | Ends at midnight | 1380–1440 | Available | True | True | | |
+| T9 | Past midnight | 1380–1441 | Unavailable | False | False | | |
+| T10 | Second booking | 720–780, existing (600–660), (700–760) | Unavailable | False | False | | |
+| T11 | Same check twice | 660–720, twice | Available | True | True | | |
 | T12 | Narrow screen | T1 at ~375 px wide | Available | n/a | n/a | | |
 
 ## 6. Traceability
@@ -225,11 +234,11 @@
 
 ### B1
 
-- **Tool:** (write here)
-- **Model:** (write here)
-- **Date:** (write here)
-- **Stage:** (write here)
-- **Source:** (write here)
+- **Tool:** Gemini (web)
+- **Model:** Gemini 2.5 Flash
+- **Date:** 2026-10-10
+- **Stage:** Plan
+- **Source:** week-05
 
 **Prompt:**
 
@@ -240,7 +249,46 @@
 **Response:**
 
 ~~~~text
-(paste here)
+Here is the proposed implementation plan, ordered check sequence, assumptions, and suggested boundary cases for can_book.
+
+Implementation Plan & Ordered Checks
+To evaluate the booking decision cleanly and fail fast, the function checks the acceptance criteria in the following order:
+
+Check Parameter Integrity & AC1 (Time Boundaries & Chronology):
+- Check if 0<=start<end<=1440.
+- Check if start>=now.
+- If any of these fail, return False.
+
+Check AC2 (Maximum Duration):
+- Calculate duration=end-start.
+- Check if duration<=120.
+- If false, return False.
+
+Check AC3 (Room Blocked Status):
+- Check if blocked is True.
+- If true, return False.
+
+Check AC4 (Overlap with Existing Bookings):
+- Iterate through each tuple (b_start, b_end) in existing.
+- Check for an overlap using interval logic: two intervals [start,end) and [b_start,b_end) overlap if and only if start<b_end and end>b_start.
+- If an overlap is found, return False.
+
+Decision (AC5):
+- If all checks pass, return True.
+
+Key Assumptions
+- Zero-Modification Guarantee: The function will read existing strictly without altering the list or its inner tuples.
+- Interval Boundary Model: Intervals are half-open [start,end), meaning touching endpoints (e.g., existing booking [600,660) and new request [660,720)) satisfy 660<660=>False for overlap, allowing contiguous bookings.
+- Midnight Boundary: Total minutes in a single day are represented up to 1440 (24:00). Requests starting at or after 1440 or ending after 1440 are invalid.
+- Input Types: All time values (start, end, now) are valid integers, blocked is a boolean, and existing is a list of valid integer pairs.
+
+Suggested Boundary Test Cases
+- Touching Endpoints (Valid Contiguous Slots)
+- Partial & Enclosed Overlaps
+- Maximum Duration Bounds (AC2)
+- Immediate Start (AC1)
+- Day Limit Endpoints (AC1)
+- Invalid Interval Shapes
 ~~~~
 
 ### B2
@@ -311,7 +359,35 @@
      code/ — the part ending in "Ran N tests" and OK or FAILED. -->
 
 ~~~~text
-(paste here)
+test_covers_existing_rejected (test_booking.BookingTests.test_covers_existing_rejected) ... ok
+test_inside_existing_rejected (test_booking.BookingTests.test_inside_existing_rejected) ... ok
+test_negative_start_rejected (test_booking.BookingTests.test_negative_start_rejected) ... ok
+test_non_integer_rejected (test_booking.BookingTests.test_non_integer_rejected) ... ok
+test_start_zero_allowed_when_now_earlier (test_booking.BookingTests.test_start_zero_allowed_when_now_earlier) ... ok
+test_starts_before_now_rejected (test_booking.BookingTests.test_starts_before_now_rejected) ... ok
+test_starts_one_after_now_allowed (test_booking.BookingTests.test_starts_one_after_now_allowed) ... ok
+test_t10_second_booking_rejected (test_booking.BookingTests.test_t10_second_booking_rejected) ... ok
+test_t11_same_check_twice_and_no_mutation (test_booking.BookingTests.test_t11_same_check_twice_and_no_mutation) ... ok
+test_t1_touching_end_is_allowed (test_booking.BookingTests.test_t1_touching_end_is_allowed) ... ok
+test_t2_overlap_rejected (test_booking.BookingTests.test_t2_overlap_rejected) ... ok
+test_t3_blocked_rejected (test_booking.BookingTests.test_t3_blocked_rejected) ... ok
+test_t4_exactly_120_allowed (test_booking.BookingTests.test_t4_exactly_120_allowed) ... ok
+test_t5_121_rejected (test_booking.BookingTests.test_t5_121_rejected) ... ok
+test_t6_starts_now_rejected (test_booking.BookingTests.test_t6_starts_now_rejected) ... ok
+test_t7_reversed_rejected (test_booking.BookingTests.test_t7_reversed_rejected) ... ok
+test_t8_ends_at_midnight_allowed (test_booking.BookingTests.test_t8_ends_at_midnight_allowed) ... ok
+test_t9_past_midnight_rejected (test_booking.BookingTests.test_t9_past_midnight_rejected) ... ok
+test_touching_start_is_allowed (test_booking.BookingTests.test_touching_start_is_allowed) ... ok
+test_zero_length_rejected (test_booking.BookingTests.test_zero_length_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 20 tests in 0.003s
+
+OK
+
+C:\Users\Nurassyl Galym\Desktop\KBTU\Software Engineering\Lab Week 1\se-practice\sis-03\code>   cd ..\..
+
+C:\Users\Nurassyl Galym\Desktop\KBTU\Software Engineering\Lab Week 1\se-practice>
 ~~~~
 
 ### 12.2 Path B only — three faults you planted
