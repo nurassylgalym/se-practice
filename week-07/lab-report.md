@@ -15,8 +15,8 @@ grader find your answers by them. You can add rows to any table, but never remov
 | --- | --- |
 | Project I continue (`week-06` = my Week 06 Bolt project, `starter` = the provided starter) | week-06 |
 | Bolt project link (or `not shared`, and why) | not shared — the Week 06 export is committed in the repo, and the code I test is in `week-07/app` |
-| Assistant that generated the tests (tool) | |
-| Exact model (with its version, or `not displayed`) | |
+| Assistant that generated the tests (tool) | Claude (claude.ai, fresh chat) |
+| Exact model (with its version, or `not displayed`) | Claude Opus 5.5 |
 | Where I ran the tests (Bolt terminal / my computer / Codespace) | my computer (Windows, Node v26.13.0) |
 | Vitest version (the `RUN  v…` line of a run) | 3.2.4 |
 | Test command | `npx vitest run` (same as `npm test`) |
@@ -80,17 +80,104 @@ five columns.
 `Vitest`, followed by the case table from section 3:
 
 ```text
-(paste here)
+Generate tests for the existing booking function using Vitest. Use AC1–AC6 and the reviewed case table below.
+
+Import the real function used by the page. Keep its code unchanged. Use fixed time and fresh fixtures. Assert exact decisions and unchanged booking data.
+
+Return the test file, run command, and AC mapping. Flag unclear requirements. We will run the tests ourselves.
+
+AC1: Accept a candidate interval only when 0 ≤ start < end ≤ 1440 and start is after the supplied current time.
+AC2: Reject a booking longer than 120 minutes.
+AC3: Reject the request when the selected room is blocked.
+AC4: Reject any interval that overlaps an existing booking; touching endpoints are allowed.
+AC5: Show a clear Available / Unavailable decision without changing the existing booking data.
+AC6: The page remains usable at desktop and narrow/mobile width and gives understandable validation feedback.
+
+Default fixture: now = 540, blocked = false, bookings = [{ start: 600, end: 660 }]
+
+| ID | Input | Expected | AC |
+| T01 | 660–720 (touching after) | true | AC4 |
+| T02 | 540–570 (starts now) | false | AC1 |
+| T03 | 720–720 (zero duration) | false | AC1 |
+| T04 | 750–720 (reversed) | false | AC1 |
+| T05 | 1380–1441 (past day end) | false | AC1 |
+| T06 | 720–840 (120 minutes) | true | AC2 |
+| T07 | 720–841 (121 minutes) | false | AC2 |
+| T08 | 570–600 (touching before) | true | AC4 |
+| T09 | 630–690 (partial overlap) | false | AC4 |
+| T10 | 570–690 (contains booking) | false | AC4 |
+| T11 | 615–645 (inside booking) | false | AC4 |
+| T12 | 600–660 (identical) | false | AC4 |
+| T13 | 660–720, blocked = true | false | AC3 |
+| T14 | 630–690, bookings = [] | true | AC4 |
+| AC5 | an Available request, bookings unchanged after the call | true, data unchanged | AC5 |
+| X1 | 1380–1440 | true | AC1 |
+| X2 | 660–720, bookings = [600–660, 720–780] | true | AC4 |
+
+The function (src/booking.ts):export interface BookingRequest {
+  start: number;
+  end: number;
+  now: number;
+  blocked: boolean;
+  bookings: { start: number; end: number }[];
+}
+
+export function canBook({ start, end, now, blocked, bookings }: BookingRequest): boolean {
+  if (blocked) return false;
+  if (Number.isNaN(start) || Number.isNaN(end)) return false;
+  if (start < 0 || end > 1440) return false;
+  if (start >= end) return false;
+  if (start <= now) return false;
+  if (end - start > 120) return false;
+  return !bookings.some((b) => start < b.end && end > b.start);
+}
 ```
+
+I added the AC1–AC6 text because the assistant in a fresh chat could not see it otherwise.
 
 **The assistant's answer: run command, AC mapping and any unclear requirements it flagged,
 pasted unedited.** Its test file goes to `suites/first/` and is not pasted here:
 
 ```text
-(paste here)
+I'll write the Vitest file, then run it once here against a copy of `canBook` to make sure it passes.
+
+I've written `src/booking.test.ts`. It has 17 tests: T01–T14, X1, X2 and one for AC5. I ran it once here against an unchanged copy of `canBook`, and all 17 passed.
+
+**Run:**
+```bash
+npm i -D vitest
+npx vitest run src/booking.test.ts
 ```
 
-The first suite was saved to `suites/first/` **before** I changed anything in it: yes / no
+**How the file meets your requirements:**
+- **Real function:** it imports `canBook` from `./booking`, so it should sit next to `src/booking.ts`. Check that the page imports from that same module, not a copy inside the component.
+- **Fixed time:** `now` is always 540, passed in as input. Nothing reads the real clock.
+- **Fresh fixtures:** `defaults()` builds a new request for every test.
+- **Exact decisions:** every case uses `toBe(true)` or `toBe(false)`, so a "truthy" result won't pass.
+- **Data unchanged:** every case checks that the bookings still equal a deep copy taken before the call. The AC5 test also checks that the same array and the same objects are still in place and nothing was added.
+
+**AC mapping**
+
+| AC | Covered by |
+|---|---|
+| AC1 (valid range, after now) | T02, T03, T04, T05, X1 |
+| AC2 (≤ 120 min) | T06, T07 |
+| AC3 (blocked room) | T13 |
+| AC4 (overlap, touching allowed) | T01, T08–T12, T14, X2 |
+| AC5 (decision, data unchanged) | AC5 test, plus the data check in every case. Only the boolean result is tested. |
+| AC6 (layout, validation feedback) | Not covered. This is page behaviour, so it needs a component or end-to-end test, or a manual check at desktop and mobile widths. |
+
+**Unclear requirements:**
+1. **AC5 "clear Available / Unavailable decision":** the function only returns a boolean. The wording the user sees isn't specified or tested.
+2. **AC1 doesn't say what to do with bad numbers.** The code rejects `NaN`, but the ACs never mention it, non-integer minutes, or `Infinity`. Infinity ends up rejected only because it fails the range checks.
+3. **Range of `now` isn't stated.** For example, `now = 1440` or a negative value isn't covered. It's also unclear whether a past booking should still count as an overlap.
+4. **Bad existing bookings:** nothing says how to treat bookings that are reversed or overlap each other.
+5. **No reason for a rejection:** the function doesn't say why it said no, but AC6 asks for understandable validation feedback. Specific messages need a richer return value or separate validation in the page.
+6. **Unclear table mapping:** T14 (no bookings) is mapped to AC4 but is really a baseline "nothing to clash with" case. T13 only shows that a blocked room is rejected even when the slot is otherwise valid.
+7. **Blocked versus invalid input:** when the room is blocked and the input is also invalid, the result is `false` either way. The ACs don't say which reason should be shown.
+```
+
+The first suite was saved to `suites/first/` **before** I changed anything in it: yes
 
 ---
 
@@ -103,8 +190,10 @@ requests* · *mocked booking function*, or your own) and the AC that decides it.
 
 | # | Test or part of the suite | What is weak or wrong | Decision: accept / revise / reject | AC or reason |
 | --- | --- | --- | --- | --- |
-| 1 | | | accept / revise / reject | |
-| 2 | | | accept / revise / reject | |
+| 1 | The whole T01–T14, X1, X2 block (`it.each` over a `cases` array) | Table-driven: one title template instead of a separate test per case, which the lab rules forbid. If one case fails, it is harder to trace it to its ID. My own weakness, not one of the deck's four. | revise | Lab rule: one test per case with the ID in its title. Covers AC1–AC4 |
+| 2 | Expected values of T01–T14, X1, X2 | Checked for "expected = current output". Every value matches what I got from the ACs in section 3 before generating. None were copied from the code. | accept | AC1–AC4 |
+| 3 | `AC5: Available decision leaves booking data untouched` | Checked for "no exception occurred". It calls canBook on an Available request (660–720), asserts exactly true and compares bookings with a structuredClone copy taken before the call. | accept | AC5 |
+| 4 | Imports | Checked for "mocked booking function". It imports the real `canBook` from `./booking`, the same module App.tsx uses. No vi.mock. | accept | AC5, the page uses the same function |
 
 ---
 
