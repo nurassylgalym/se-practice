@@ -359,7 +359,14 @@ change and after restoring the correct code from section 7. Every test must pass
 is still open, leave its test failing and explain it in 9.1.
 
 ```text
-(paste here)
+ RUN  v3.2.4 C:/Users/Nurassyl Galym/Desktop/KBTU/Software Engineering/Lab Week 1/se-practice/week-07/app
+
+ ✓ src/booking.test.ts (24 tests) 4ms
+
+ Test Files  1 passed (1)
+      Tests  24 passed (24)
+   Start at  22:31:20
+   Duration  533ms (transform 41ms, setup 0ms, collect 46ms, tests 4ms, environment 0ms, prepare 136ms)
 ```
 
 ---
@@ -372,18 +379,247 @@ error does not count as detection.
 
 | Trial | Intentional change | Detected / Survived | Failing test ID(s) | If it survived: why, and what you added |
 | --- | --- | --- | --- | --- |
-| M1 | Reject duration >= 120 instead of > 120 | Detected / Survived | | |
-| M2 | Treat touching endpoints as an overlap | Detected / Survived | | |
-| M3 | Remove the blocked-room rejection | Detected / Survived | | |
+| M1 | Reject duration >= 120 instead of > 120 | Detected | T06 | — |
+| M2 | Treat touching endpoints as an overlap | Detected | T01, T08, X2, AC5 | — |
+| M3 | Remove the blocked-room rejection | Detected | T13 | — |
 
 **The run of each mutant, pasted unedited.** Paste the `Tests` summary line and the failing test
 names at least:
 
 ```text
-(paste here)
+--- M1: if (end - start >= 120) return false;
+ RUN  v3.2.4 C:/Users/Nurassyl Galym/Desktop/KBTU/Software Engineering/Lab Week 1/se-practice/week-07/app
+
+ ❯ src/booking.test.ts (24 tests | 1 failed) 21ms
+   ✓ canBook — plan T01–T14 > T01 AC4: 660–720 touches the booking end, allowed 3ms
+   ✓ canBook — plan T01–T14 > T02 AC1: 540–570 starts exactly at now, rejected 0ms
+   ✓ canBook — plan T01–T14 > T03 AC1: 720–720 zero duration, rejected 0ms
+   ✓ canBook — plan T01–T14 > T04 AC1: 750–720 reversed, rejected 0ms
+   ✓ canBook — plan T01–T14 > T05 AC1: 1380–1441 past the end of the day, rejected 0ms
+   × canBook — plan T01–T14 > T06 AC2: 720–840 exactly 120 minutes, allowed 12ms
+     → expected false to be true // Object.is equality
+   ✓ canBook — plan T01–T14 > T07 AC2: 720–841 is 121 minutes, rejected 0ms
+   ✓ canBook — plan T01–T14 > T08 AC4: 570–600 touches the booking start, allowed 0ms
+   ✓ canBook — plan T01–T14 > T09 AC4: 630–690 partial overlap, rejected 0ms
+   ✓ canBook — plan T01–T14 > T10 AC4: 570–690 contains the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T11 AC4: 615–645 inside the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T12 AC4: 600–660 identical to the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T13 AC3: 660–720 in a blocked room, rejected 0ms
+   ✓ canBook — plan T01–T14 > T14 AC4: 630–690 with no bookings, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > X1 AC1: 1380–1440 ends exactly at 24:00, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > X2 AC4: 660–720 touches two bookings, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B01 AC1: 541–570 first minute after now, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B02 AC1: 660–720 with now 700, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B03 AC1: 701–720 with now 700, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B04 AC4: 659–720 one minute over the booking end, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B05 AC4: 570–601 one minute into the booking start, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B06 AC4: 700–750 overlaps only the second booking, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B07 AC4: 630–690 overlaps a booking listed second in an unsorted list, rejected 0ms
+   ✓ canBook — data preservation > AC5: an Available request leaves the bookings unchanged 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/booking.test.ts > canBook — plan T01–T14 > T06 AC2: 720–840 exactly 120 minutes, allowed
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/booking.test.ts:40:29
+     38|   });
+     39|   test('T06 AC2: 720–840 exactly 120 minutes, allowed', () => {
+     40|     expect(check(720, 840)).toBe(true);
+       |                             ^
+     41|   });
+     42|   test('T07 AC2: 720–841 is 121 minutes, rejected', () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  22:29:13
+   Duration  1.16s (transform 43ms, setup 0ms, collect 72ms, tests 21ms, environment 0ms, prepare 135ms)
+
+--- M2: return !bookings.some((b) => start <= b.end && end >= b.start);
+ RUN  v3.2.4 C:/Users/Nurassyl Galym/Desktop/KBTU/Software Engineering/Lab Week 1/se-practice/week-07/app
+
+ ❯ src/booking.test.ts (24 tests | 4 failed) 20ms
+   × canBook — plan T01–T14 > T01 AC4: 660–720 touches the booking end, allowed 14ms
+     → expected false to be true // Object.is equality
+   ✓ canBook — plan T01–T14 > T02 AC1: 540–570 starts exactly at now, rejected 0ms
+   ✓ canBook — plan T01–T14 > T03 AC1: 720–720 zero duration, rejected 0ms
+   ✓ canBook — plan T01–T14 > T04 AC1: 750–720 reversed, rejected 0ms
+   ✓ canBook — plan T01–T14 > T05 AC1: 1380–1441 past the end of the day, rejected 0ms
+   ✓ canBook — plan T01–T14 > T06 AC2: 720–840 exactly 120 minutes, allowed 0ms
+   ✓ canBook — plan T01–T14 > T07 AC2: 720–841 is 121 minutes, rejected 0ms
+   × canBook — plan T01–T14 > T08 AC4: 570–600 touches the booking start, allowed 1ms
+     → expected false to be true // Object.is equality
+   ✓ canBook — plan T01–T14 > T09 AC4: 630–690 partial overlap, rejected 0ms
+   ✓ canBook — plan T01–T14 > T10 AC4: 570–690 contains the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T11 AC4: 615–645 inside the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T12 AC4: 600–660 identical to the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T13 AC3: 660–720 in a blocked room, rejected 0ms
+   ✓ canBook — plan T01–T14 > T14 AC4: 630–690 with no bookings, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > X1 AC1: 1380–1440 ends exactly at 24:00, allowed 0ms
+   × canBook — own cases and extra boundaries > X2 AC4: 660–720 touches two bookings, allowed 0ms
+     → expected false to be true // Object.is equality
+   ✓ canBook — own cases and extra boundaries > B01 AC1: 541–570 first minute after now, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B02 AC1: 660–720 with now 700, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B03 AC1: 701–720 with now 700, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B04 AC4: 659–720 one minute over the booking end, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B05 AC4: 570–601 one minute into the booking start, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B06 AC4: 700–750 overlaps only the second booking, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B07 AC4: 630–690 overlaps a booking listed second in an unsorted list, rejected 0ms
+   × canBook — data preservation > AC5: an Available request leaves the bookings unchanged 0ms
+     → expected false to be true // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/booking.test.ts > canBook — plan T01–T14 > T01 AC4: 660–720 touches the booking end, allowed
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/booking.test.ts:25:29
+     23| describe('canBook — plan T01–T14', () => {
+     24|   test('T01 AC4: 660–720 touches the booking end, allowed', () => {
+     25|     expect(check(660, 720)).toBe(true);
+       |                             ^
+     26|   });
+     27|   test('T02 AC1: 540–570 starts exactly at now, rejected', () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/booking.test.ts > canBook — plan T01–T14 > T08 AC4: 570–600 touches the booking start, allowed
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/booking.test.ts:46:29
+     44|   });
+     45|   test('T08 AC4: 570–600 touches the booking start, allowed', () => {
+     46|     expect(check(570, 600)).toBe(true);
+       |                             ^
+     47|   });
+     48|   test('T09 AC4: 630–690 partial overlap, rejected', () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/booking.test.ts > canBook — own cases and extra boundaries > X2 AC4: 660–720 touches two bookings, allowed
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/booking.test.ts:73:48
+     71|   });
+     72|   test('X2 AC4: 660–720 touches two bookings, allowed', () => {
+     73|     expect(check(660, 720, { bookings: TWO })).toBe(true);
+       |                                                ^
+     74|   });
+     75|   test('B01 AC1: 541–570 first minute after now, allowed', () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/booking.test.ts > canBook — data preservation > AC5: an Available request leaves the bookings unchanged
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/booking.test.ts:102:83
+    100|     const bookings = [{ start: 600, end: 660 }];
+    101|     const before = structuredClone(bookings);
+    102|     expect(canBook({ start: 660, end: 720, now: NOW, blocked: false, b…
+       |                                                                                   ^
+    103|     expect(bookings).toEqual(before);
+    104|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 20 passed (24)
+   Start at  22:30:07
+   Duration  589ms (transform 49ms, setup 0ms, collect 77ms, tests 20ms, environment 0ms, prepare 152ms)
+
+--- M3: removed if (blocked) return false;
+ RUN  v3.2.4 C:/Users/Nurassyl Galym/Desktop/KBTU/Software Engineering/Lab Week 1/se-practice/week-07/app
+
+ ❯ src/booking.test.ts (24 tests | 1 failed) 14ms
+   ✓ canBook — plan T01–T14 > T01 AC4: 660–720 touches the booking end, allowed 3ms
+   ✓ canBook — plan T01–T14 > T02 AC1: 540–570 starts exactly at now, rejected 0ms
+   ✓ canBook — plan T01–T14 > T03 AC1: 720–720 zero duration, rejected 0ms
+   ✓ canBook — plan T01–T14 > T04 AC1: 750–720 reversed, rejected 0ms
+   ✓ canBook — plan T01–T14 > T05 AC1: 1380–1441 past the end of the day, rejected 0ms
+   ✓ canBook — plan T01–T14 > T06 AC2: 720–840 exactly 120 minutes, allowed 0ms
+   ✓ canBook — plan T01–T14 > T07 AC2: 720–841 is 121 minutes, rejected 0ms
+   ✓ canBook — plan T01–T14 > T08 AC4: 570–600 touches the booking start, allowed 0ms
+   ✓ canBook — plan T01–T14 > T09 AC4: 630–690 partial overlap, rejected 0ms
+   ✓ canBook — plan T01–T14 > T10 AC4: 570–690 contains the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T11 AC4: 615–645 inside the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T12 AC4: 600–660 identical to the booking, rejected 0ms
+   × canBook — plan T01–T14 > T13 AC3: 660–720 in a blocked room, rejected 6ms
+     → expected true to be false // Object.is equality
+   ✓ canBook — plan T01–T14 > T14 AC4: 630–690 with no bookings, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > X1 AC1: 1380–1440 ends exactly at 24:00, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > X2 AC4: 660–720 touches two bookings, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B01 AC1: 541–570 first minute after now, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B02 AC1: 660–720 with now 700, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B03 AC1: 701–720 with now 700, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B04 AC4: 659–720 one minute over the booking end, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B05 AC4: 570–601 one minute into the booking start, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B06 AC4: 700–750 overlaps only the second booking, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B07 AC4: 630–690 overlaps a booking listed second in an unsorted list, rejected 0ms
+   ✓ canBook — data preservation > AC5: an Available request leaves the bookings unchanged 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/booking.test.ts > canBook — plan T01–T14 > T13 AC3: 660–720 in a blocked room, rejected
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/booking.test.ts:61:48
+     59|   });
+     60|   test('T13 AC3: 660–720 in a blocked room, rejected', () => {
+     61|     expect(check(660, 720, { blocked: true })).toBe(false);
+       |                                                ^
+     62|   });
+     63|   test('T14 AC4: 630–690 with no bookings, allowed', () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  22:31:02
+   Duration  1.08s (transform 41ms, setup 0ms, collect 47ms, tests 14ms, environment 0ms, prepare 97ms)
 ```
 
-All three changes reverted, and the full suite run again (section 6.3): yes / no
+All three changes reverted, and the full suite run again (section 6.3): yes
 
 ---
 
