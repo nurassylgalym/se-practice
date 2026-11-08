@@ -631,11 +631,11 @@ screenshot of each as `evidence/ui-1.png` … `evidence/ui-5.png`. Take **ui-4 a
 
 | # | Action | Expected observation | AC | What I observed | Pass / Fail / Not testable |
 | --- | --- | --- | --- | --- | --- |
-| U1 | Check 11:00–12:00, unblocked | Available, with the fixed sample booking | AC5 | | Pass / Fail / Not testable |
-| U2 | Enable blocked, then check again | Unavailable replaces the earlier result | AC3, AC5 | | Pass / Fail / Not testable |
-| U3 | Clear a required input and submit | Understandable validation feedback | AC6 | | Pass / Fail / Not testable |
-| U4 | Use a narrow (phone) width | Controls and result remain usable | AC6 | | Pass / Fail / Not testable |
-| U5 | Repeat the checks on the same data | Existing bookings remain unchanged | AC5 | | Pass / Fail / Not testable |
+| U1 | Check 11:00–12:00, unblocked | Available, with the fixed sample booking | AC5 | My data has no 10:00–11:00 booking, so I used Feynman 220 (booking 10:00–11:30) and checked 11:30–12:30, now 09:00. The page shows Available, "Feynman 220 is free from 11:30 to 12:30", and the booking list still shows 10:00–11:30. | Pass |
+| U2 | Enable blocked, then check again | Unavailable replaces the earlier result | AC3, AC5 | The page has no blocked switch, a room is blocked in the data. I switched to Turing 110 (Blocked) with the same 11:30–12:30. Unavailable replaced Available, with "Turing 110 is currently blocked and cannot be booked." | Pass |
+| U3 | Clear a required input and submit | Understandable validation feedback | AC6 | There is no submit button, the result updates live. I cleared End time. The verdict disappeared and the page shows "Pick a room and a start/end time to see the availability result." It is understandable, but it does not say which field is empty. | Pass |
+| U4 | Use a narrow (phone) width | Controls and result remain usable | AC6 | Chrome device toolbar, phone width, portrait. The fields stack in one column, nothing is cut off, and Athena 101 11:30–12:30 shows Available with the full message. | Pass |
+| U5 | Repeat the checks on the same data | Existing bookings remain unchanged | AC5 | After the Available and the blocked checks I went back to Feynman 220. The list still shows only 10:00–11:30 Physics Dept, nothing was added or changed. | Pass |
 
 ---
 
@@ -653,11 +653,11 @@ Use the same IDs as `known_fails` in `submission.yml`. Write `none` if the run i
 
 | Measure | First suite | Improved suite |
 | --- | --- | --- |
-| Executed / passed / failed | | |
-| Requirements with meaningful tests (AC IDs and gaps) | | |
-| Selected mutants detected | | |
-| Accepted / revised / rejected tests | | |
-| Remaining limitations | | |
+| Executed / passed / failed | 17 / 17 / 0 | 24 / 24 / 0 |
+| Requirements with meaningful tests (AC IDs and gaps) | AC1–AC5. Gaps: now was always 540, every overlap was with the first booking, lists were always sorted. AC6 not tested | AC1–AC5, plus now = 700 (B02, B03), the second booking and an unsorted list (B06, B07), one-minute overlaps (B04, B05). AC6 checked by hand in section 8 |
+| Selected mutants detected | not run against the first suite | 3 of 3 (M1 by T06, M2 by T01, T08, X2, AC5, M3 by T13) |
+| Accepted / revised / rejected tests | section 5: 3 accepted, 1 revised (the `it.each` block), 1 rejected (the claim that the tests passed) | all 17 planned cases kept with the same expected values, 7 boundaries added, no expected value changed |
+| Remaining limitations | — | NaN, negative or out-of-range now are not tested because no AC says what should happen. The error text still comes from `availability.ts`, so a message can disagree with canBook and no test would see it |
 
 ### 9.3 What no AC decides
 
@@ -665,7 +665,10 @@ Call your function with `bookings = [{ start: 700, end: 650 }]` (a reversed exis
 and a request of 660–720. What does it return? Does any AC say what it should return? (This is
 the value you declare in `submission.yml` under `assumptions.invalid_existing_booking`.)
 
--
+- I ran it with node: `canBook({ start: 660, end: 720, now: 540, blocked: false, bookings: [{ start: 700, end: 650 }] })` returned `true`.
+- Why: the overlap check is `start < b.end && end > b.start`. With b.end = 650, `660 < 650` is false, so the reversed booking never counts as a clash and the request is Available, even though 660–720 covers the minutes 700 and 650 on both sides.
+- No AC decides this. AC1 checks only the candidate interval, and AC4 talks about "an existing booking" without saying what a broken one means. The assistant flagged the same gap ("bad existing bookings") in its first answer.
+- I keep `returns-true` as the declared behaviour. In my page the bookings are fixed sample data, so a reversed one cannot appear. If bookings ever came from users, I would rather reject such data before it reaches canBook than guess inside it.
 
 ---
 
@@ -681,3 +684,9 @@ the value you declare in `submission.yml` under `assumptions.invalid_existing_bo
      pass, M1 would have become the real behaviour." -->
 
 <!-- Write your conclusion below this line -->
+
+The weakest part of the first suite was that `now` never moved off 540 and every overlap case clashed with the first booking in a sorted list. A canBook that hard-coded 540, or only looked at bookings[0], would have passed all 17 tests. The green run didn't show me that. I saw it when I read the tests against the ACs and the improvement answer pointed at the same thing, so I added B02, B03, B06 and B07.
+
+My final run is 24 green tests, and M1, M2 and M3 were each caught by a real assertion (T06, T01 and T08, T13). That proves canBook follows AC1–AC4 for these 24 inputs. It doesn't prove the page shows the right thing. The message the user reads comes from availability.ts, not from canBook, and I only checked it by hand in U1–U5.
+
+What's still open: a broken existing booking like 700–650 just gets ignored and canBook returns true. No AC says if that's right, and no test covers it.
