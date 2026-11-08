@@ -1,78 +1,105 @@
-import { describe, it, expect } from "vitest";
-import { canBook, type BookingRequest } from "./booking"; // same module the page imports
+import { describe, test, expect } from 'vitest';
+import { canBook } from './booking';
 
 type Booking = { start: number; end: number };
+type Opts = { now?: number; blocked?: boolean; bookings?: Booking[] };
 
-// Fixed clock: "now" is an input (minutes since midnight), never read from Date.
-const NOW = 540;
+const NOW = 540; // fixed time: 09:00
+const ONE: Booking[] = [{ start: 600, end: 660 }];
+const TWO: Booking[] = [{ start: 600, end: 660 }, { start: 720, end: 780 }];
 
-// Fresh fixture per test, so no test can leak state into another.
-const defaults = (): Omit<BookingRequest, "start" | "end"> => ({
-  now: NOW,
-  blocked: false,
-  bookings: [{ start: 600, end: 660 }],
+// fresh deep-frozen copy per call: no shared data, and any write inside canBook throws
+const fresh = (bs: Booking[]) => Object.freeze(bs.map((b) => Object.freeze({ ...b }))) as Booking[];
+
+// calls the real canBook and checks the bookings did not change
+function check(start: number, end: number, o: Opts = {}) {
+  const bookings = fresh(o.bookings ?? ONE);
+  const before = structuredClone(bookings);
+  const result = canBook({ start, end, now: o.now ?? NOW, blocked: o.blocked ?? false, bookings });
+  expect(bookings).toEqual(before);
+  return result;
+}
+
+describe('canBook — plan T01–T14', () => {
+  test('T01 AC4: 660–720 touches the booking end, allowed', () => {
+    expect(check(660, 720)).toBe(true);
+  });
+  test('T02 AC1: 540–570 starts exactly at now, rejected', () => {
+    expect(check(540, 570)).toBe(false);
+  });
+  test('T03 AC1: 720–720 zero duration, rejected', () => {
+    expect(check(720, 720)).toBe(false);
+  });
+  test('T04 AC1: 750–720 reversed, rejected', () => {
+    expect(check(750, 720)).toBe(false);
+  });
+  test('T05 AC1: 1380–1441 past the end of the day, rejected', () => {
+    expect(check(1380, 1441)).toBe(false);
+  });
+  test('T06 AC2: 720–840 exactly 120 minutes, allowed', () => {
+    expect(check(720, 840)).toBe(true);
+  });
+  test('T07 AC2: 720–841 is 121 minutes, rejected', () => {
+    expect(check(720, 841)).toBe(false);
+  });
+  test('T08 AC4: 570–600 touches the booking start, allowed', () => {
+    expect(check(570, 600)).toBe(true);
+  });
+  test('T09 AC4: 630–690 partial overlap, rejected', () => {
+    expect(check(630, 690)).toBe(false);
+  });
+  test('T10 AC4: 570–690 contains the booking, rejected', () => {
+    expect(check(570, 690)).toBe(false);
+  });
+  test('T11 AC4: 615–645 inside the booking, rejected', () => {
+    expect(check(615, 645)).toBe(false);
+  });
+  test('T12 AC4: 600–660 identical to the booking, rejected', () => {
+    expect(check(600, 660)).toBe(false);
+  });
+  test('T13 AC3: 660–720 in a blocked room, rejected', () => {
+    expect(check(660, 720, { blocked: true })).toBe(false);
+  });
+  test('T14 AC4: 630–690 with no bookings, allowed', () => {
+    expect(check(630, 690, { bookings: [] })).toBe(true);
+  });
 });
 
-type Case = {
-  id: string;
-  ac: string;
-  label: string;
-  start: number;
-  end: number;
-  expected: boolean;
-  blocked?: boolean;
-  bookings?: Booking[];
-};
-
-const cases: Case[] = [
-  { id: "T01", ac: "AC4", label: "touching after", start: 660, end: 720, expected: true },
-  { id: "T02", ac: "AC1", label: "starts now", start: 540, end: 570, expected: false },
-  { id: "T03", ac: "AC1", label: "zero duration", start: 720, end: 720, expected: false },
-  { id: "T04", ac: "AC1", label: "reversed", start: 750, end: 720, expected: false },
-  { id: "T05", ac: "AC1", label: "past day end", start: 1380, end: 1441, expected: false },
-  { id: "T06", ac: "AC2", label: "exactly 120 minutes", start: 720, end: 840, expected: true },
-  { id: "T07", ac: "AC2", label: "121 minutes", start: 720, end: 841, expected: false },
-  { id: "T08", ac: "AC4", label: "touching before", start: 570, end: 600, expected: true },
-  { id: "T09", ac: "AC4", label: "partial overlap", start: 630, end: 690, expected: false },
-  { id: "T10", ac: "AC4", label: "contains booking", start: 570, end: 690, expected: false },
-  { id: "T11", ac: "AC4", label: "inside booking", start: 615, end: 645, expected: false },
-  { id: "T12", ac: "AC4", label: "identical", start: 600, end: 660, expected: false },
-  { id: "T13", ac: "AC3", label: "room blocked", start: 660, end: 720, blocked: true, expected: false },
-  { id: "T14", ac: "AC4", label: "no bookings", start: 630, end: 690, bookings: [], expected: true },
-  { id: "X1", ac: "AC1", label: "ends exactly at 1440", start: 1380, end: 1440, expected: true },
-  {
-    id: "X2", ac: "AC4", label: "gap between two bookings", start: 660, end: 720,
-    bookings: [{ start: 600, end: 660 }, { start: 720, end: 780 }], expected: true,
-  },
-];
-
-describe("canBook", () => {
-  it.each(cases)("$id [$ac] $label: $start–$end → $expected", (c) => {
-    const req: BookingRequest = {
-      ...defaults(),
-      start: c.start,
-      end: c.end,
-      ...(c.blocked !== undefined && { blocked: c.blocked }),
-      ...(c.bookings !== undefined && { bookings: c.bookings }),
-    };
-    const before = structuredClone(req.bookings);
-
-    const result = canBook(req);
-
-    expect(result).toBe(c.expected);       // exact boolean, not truthy/falsy
-    expect(req.bookings).toEqual(before);  // existing data unchanged (AC5)
+describe('canBook — own cases and extra boundaries', () => {
+  test('X1 AC1: 1380–1440 ends exactly at 24:00, allowed', () => {
+    expect(check(1380, 1440)).toBe(true);
   });
+  test('X2 AC4: 660–720 touches two bookings, allowed', () => {
+    expect(check(660, 720, { bookings: TWO })).toBe(true);
+  });
+  test('B01 AC1: 541–570 first minute after now, allowed', () => {
+    expect(check(541, 570)).toBe(true);
+  });
+  test('B02 AC1: 660–720 with now 700, rejected', () => {
+    expect(check(660, 720, { now: 700 })).toBe(false);
+  });
+  test('B03 AC1: 701–720 with now 700, allowed', () => {
+    expect(check(701, 720, { now: 700 })).toBe(true);
+  });
+  test('B04 AC4: 659–720 one minute over the booking end, rejected', () => {
+    expect(check(659, 720)).toBe(false);
+  });
+  test('B05 AC4: 570–601 one minute into the booking start, rejected', () => {
+    expect(check(570, 601)).toBe(false);
+  });
+  test('B06 AC4: 700–750 overlaps only the second booking, rejected', () => {
+    expect(check(700, 750, { bookings: TWO })).toBe(false);
+  });
+  test('B07 AC4: 630–690 overlaps a booking listed second in an unsorted list, rejected', () => {
+    expect(check(630, 690, { bookings: [TWO[1], TWO[0]] })).toBe(false);
+  });
+});
 
-  it("AC5: Available decision leaves booking data untouched", () => {
-    const req: BookingRequest = { ...defaults(), start: 660, end: 720 };
-    const ref = req.bookings;
-    const item = ref[0];
-    const before = structuredClone(ref);
-
-    expect(canBook(req)).toBe(true);
-    expect(req.bookings).toBe(ref);   // same array, not reassigned
-    expect(ref[0]).toBe(item);        // same object
-    expect(ref).toEqual(before);      // same contents
-    expect(ref).toHaveLength(1);      // nothing appended
+describe('canBook — data preservation', () => {
+  test('AC5: an Available request leaves the bookings unchanged', () => {
+    const bookings = [{ start: 600, end: 660 }];
+    const before = structuredClone(bookings);
+    expect(canBook({ start: 660, end: 720, now: NOW, blocked: false, bookings })).toBe(true);
+    expect(bookings).toEqual(before);
   });
 });

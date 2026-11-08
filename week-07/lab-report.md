@@ -247,8 +247,110 @@ The deck's improvement prompt exactly as sent, followed by the actual output fro
 paste the assistant's answer, unedited:
 
 ```text
-(paste here)
+Review this test suite against AC1–AC6 and our case table. Identify incorrect expectations, weak assertions, duplicated cases, and missing boundaries.
+
+For each proposed change, explain the requirement and the defect it could detect. Improve the tests without changing correct expectations to match buggy behavior.
+
+Use the actual failure output below. Separate test repairs from implementation fixes.
+
+C:\Users\Nurassyl Galym\Desktop\KBTU\Software Engineering\Lab Week 1\se-practice\week-07\app>npx vitest run
+
+ RUN  v3.2.4 C:/Users/Nurassyl Galym/Desktop/KBTU/Software Engineering/Lab Week 1/se-practice/week-07/app
+
+ ✓ src/booking.test.ts (17 tests) 8ms
+   ✓ canBook > 'T01' ['AC4'] 'touching after': 660–720 → true 4ms
+   ✓ canBook > 'T02' ['AC1'] 'starts now': 540–570 → false 0ms
+   ✓ canBook > 'T03' ['AC1'] 'zero duration': 720–720 → false 0ms
+   ✓ canBook > 'T04' ['AC1'] 'reversed': 750–720 → false 0ms
+   ✓ canBook > 'T05' ['AC1'] 'past day end': 1380–1441 → false 0ms
+   ✓ canBook > 'T06' ['AC2'] 'exactly 120 minutes': 720–840 → true 0ms
+   ✓ canBook > 'T07' ['AC2'] '121 minutes': 720–841 → false 0ms
+   ✓ canBook > 'T08' ['AC4'] 'touching before': 570–600 → true 0ms
+   ✓ canBook > 'T09' ['AC4'] 'partial overlap': 630–690 → false 0ms
+   ✓ canBook > 'T10' ['AC4'] 'contains booking': 570–690 → false 0ms
+   ✓ canBook > 'T11' ['AC4'] 'inside booking': 615–645 → false 0ms
+   ✓ canBook > 'T12' ['AC4'] 'identical': 600–660 → false 0ms
+   ✓ canBook > 'T13' ['AC3'] 'room blocked': 660–720 → false 0ms
+   ✓ canBook > 'T14' ['AC4'] 'no bookings': 630–690 → true 0ms
+   ✓ canBook > 'X1' ['AC1'] 'ends exactly at 1440': 1380–1440 → true 0ms
+   ✓ canBook > 'X2' ['AC4'] 'gap between two bookings': 660–720 → true 0ms
+   ✓ canBook > AC5: Available decision leaves booking data untouched 1ms
+
+ Test Files  1 passed (1)
+      Tests  17 passed (17)
+   Start at  22:02:19
+   Duration  3.86s (transform 42ms, setup 0ms, collect 58ms, tests 8ms, environment 0ms, prepare 594ms)
 ```
+
+**The assistant's answer:**
+
+```text
+I'll check the suite against the ACs and the case table, rewrite it, then run it against an unchanged copy of `canBook`.
+
+I've rewritten `booking.test.ts`: it now has 25 tests and all pass against your unchanged `canBook`. The run you pasted has no failures (17/17 passed), so there was no failure output to work from. A green run only means the old suite was too weak to catch some bugs. To check the new tests, I planted three bugs in a copy of `canBook` and confirmed the new tests catch each one (details at the end).
+
+## Review findings
+
+**Incorrect expectations: none.** Every expected value in the suite matches AC1–AC4 and your table, and I didn't change any of them.
+
+**Weak assertions and isolation problems**
+
+| # | Problem | Requirement | Bug it could have missed |
+|---|---|---|---|
+| W1 | `now` was always 540, so the code could ignore the `now` it's given | AC1 (start must be after the supplied current time) | Code that hard-codes 540 or uses the real clock |
+| W2 | Every overlap test had the clash in the first booking | AC4 ("any" existing booking) | Code that checks only `bookings[0]`, or stops after the first booking |
+| W3 | Booking lists were always sorted, so sorting them in place changed nothing | AC5 (booking data unchanged) | `bookings.sort()` inside `canBook` mutating the page's data |
+| W4 | The `bookings` arrays in the case list were passed in as they are, shared across runs | Your "fresh fixtures" rule | One test's mutation leaking into later tests or watch-mode reruns |
+| W5 | Mutation was only checked with `toEqual` after the call | AC5 | A change made and then undone during the call |
+
+**The fixes:**
+- Each test now gets a fresh, deep-frozen copy of its bookings, so any write throws an error. This covers W3–W5.
+- B02 and B03 move `now` to 700 (W1).
+- B06 and B07 put the clash in the second booking and in an unsorted list (W2, W3).
+
+**Duplicated cases**
+- The old AC5 test used the same input as T01 and repeated a check every case already did. It's now two tests, one Available and one Unavailable, both on an unsorted two-booking list, so they test something new.
+- T01 and T13 are the same slot, and T09 and T14 are the same slot. That's intentional: each pair changes one thing (blocked, or no bookings), so I kept them and renamed them to make that clear.
+
+**Missing boundaries (added)**
+
+| ID | Case | Requirement | Bug it catches |
+|---|---|---|---|
+| B01 | 541–570 → true | AC1, first minute after now | An extra off-by-one, e.g. `start <= now + 1` |
+| B02 | now=700, 660–720 → false | AC1 | `now` ignored or hard-coded |
+| B03 | now=700, 701–720 → true | AC1 | Same, from the accepting side |
+| B04 | 659–720 → false | AC4, 1-minute overlap at booking end | Treating near-touching as touching |
+| B05 | 570–601 → false | AC4, 1-minute overlap at booking start | Same |
+| B06 | overlaps 2nd booking only → false | AC4 | Only the first booking checked |
+| B07 | unsorted list, overlaps the booking listed second → false | AC4 | Code that relies on the list being sorted |
+
+## Test repairs and implementation fixes
+
+**Test repairs:** everything above, all in the test file.
+
+**Implementation fixes:** none needed. Nothing in the evidence shows `canBook` breaking an AC. Some things worth raising with whoever owns the requirements:
+1. **The `start < 0` check can never decide the result.** AC1 also requires `start > now`, so whenever `now ≥ 0` the start can't be negative anyway. The check only matters if `now` can be negative, which the ACs don't define. I didn't add a test, because any expected value would be a guess.
+2. **`now` isn't validated.** Values like 1440, a negative number or `NaN` aren't covered by the ACs.
+3. **`NaN`, `Infinity` and fractional minutes** are only partly handled and not specified, so they're not tested.
+4. **AC6 asks for understandable feedback,** but the function only returns `true` or `false`, so the page can't say why a request was rejected. Meeting AC6 means returning a reason from `canBook`, or validating separately in the page.
+
+## Not covered by these tests
+- **AC6** (layout and validation messages) and **AC5's on-screen Available / Unavailable text** need a component test, e.g. with Testing Library, or a manual check at desktop and mobile widths.
+- **How the page works out `now`** from the clock (minutes since midnight, time zone) is where a real bug would most likely hide. Test it with `vi.setSystemTime` in a page-level test, not in this file.
+
+## How I checked the new tests
+| Planted bug | Old suite | New suite |
+|---|---|---|
+| `bookings.sort()` in place | passed (missed) | 5 failures |
+| Only `bookings[0]` checked | passed (missed) | B06 and B07 fail |
+| `start <= 540` instead of `now` | passed (missed) | B03 fails |
+
+Run it with `npx vitest run`, as before. Your Vitest 3.2.4 supports everything the file uses.
+
+[The answer also contained a rewritten test file. It still used it.each, so I did not commit it as it was. What I took from it is listed below.]
+```
+
+**What I applied.** I accepted the extra boundaries B01–B07 and the fresh, deep-frozen copy of the bookings for every test, because they catch bugs my first suite missed (a hard-coded `now`, checking only the first booking, sorting the bookings in place). I did not take the file as it was: it still used `it.each`, which the lab rules forbid, so I wrote every case as its own `test()` with the ID in the title. I kept one AC5 test on an Available request, compared with a `structuredClone` copy taken before the call. No expected value changed, and `booking.ts` was not touched. The final suite has 24 tests.
 
 ### 6.3 The final run
 
