@@ -112,6 +112,7 @@ Build a small responsive Smart Campus Room Availability Checker. Requirements: A
 - Shows Available / Unavailable with a reason line, and the selected room's existing bookings.
 - AC1 bug: `validateInterval` uses `start < currentTime`, so a start equal to now is accepted (T6).
 - Blocked room Turing 110 is a disabled option in the dropdown, so the AC3 rejection can't be reached from the UI.
+- Observed on 2026-11-09 (Da Vinci 305, current time 09:00): T4 12:00-14:00 "Available, Da Vinci 305 is free from 12:00 to 14:00"; T5 12:00-14:01 "Unavailable, Bookings cannot be longer than 120 minutes"; T6 09:00-09:30 "Available, Da Vinci 305 is free from 09:00 to 09:30" (bug); T7 12:00-11:00 "Unavailable, Start time must be earlier than end time". Screenshots in `evidence/` (t4, t5, v1-T6, t7, t8-9).
 - No sample room has 10:00-11:00 as its only booking, and bookings can't be edited, so the base data of T1/T2/T10/T11 can't be set up.
 - `package.json` lists `@supabase/supabase-js` although nothing uses it: a database client, out of scope.
 - Time inputs are `<input type="time">`, which stop at 23:59, so 24:00 can't be entered (T8, T9).
@@ -128,18 +129,18 @@ Build a small responsive Smart Campus Room Availability Checker. Requirements: A
 
 | Case | Name | Input | Expected | Python v1 | Python final | Page v1 | Page final |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| T1 | Touching | 660–720 | Available | True | True | | |
-| T2 | Overlap | 630–690 | Unavailable | False | False | | |
-| T3 | Blocked | 660–720, blocked | Unavailable | False | False | | |
-| T4 | Exactly 120 min | 720–840 | Available | True | True | | |
-| T5 | 121 min | 720–841 | Unavailable | False | False | | |
-| T6 | Starts now | 540–570 | Unavailable | True | False | | |
-| T7 | Reversed | 720–660 | Unavailable | False | False | | |
-| T8 | Ends at midnight | 1380–1440 | Available | True | True | | |
-| T9 | Past midnight | 1380–1441 | Unavailable | False | False | | |
-| T10 | Second booking | 720–780, existing (600–660), (700–760) | Unavailable | False | False | | |
-| T11 | Same check twice | 660–720, twice | Available | True | True | | |
-| T12 | Narrow screen | T1 at ~375 px wide | Available | n/a | n/a | | |
+| T1 | Touching | 660–720 | Available | True | True | Not testable | |
+| T2 | Overlap | 630–690 | Unavailable | False | False | Not testable | |
+| T3 | Blocked | 660–720, blocked | Unavailable | False | False | Not testable | |
+| T4 | Exactly 120 min | 720–840 | Available | True | True | Available | |
+| T5 | 121 min | 720–841 | Unavailable | False | False | Unavailable | |
+| T6 | Starts now | 540–570 | Unavailable | True | False | Available | |
+| T7 | Reversed | 720–660 | Unavailable | False | False | Unavailable | |
+| T8 | Ends at midnight | 1380–1440 | Available | True | True | Not testable | |
+| T9 | Past midnight | 1380–1441 | Unavailable | False | False | Not testable | |
+| T10 | Second booking | 720–780, existing (600–660), (700–760) | Unavailable | False | False | Not testable | |
+| T11 | Same check twice | 660–720, twice | Available | True | True | Not testable | |
+| T12 | Narrow screen | T1 at ~375 px wide | Available | n/a | n/a | Not testable | |
 
 ## 6. Traceability
 
