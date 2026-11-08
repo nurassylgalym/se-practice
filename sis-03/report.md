@@ -178,9 +178,12 @@ Build a small responsive Smart Campus Room Availability Checker. Requirements: A
 
 | # | AI claim or recommendation | How I verified it | Decision | Reason (AC or case) |
 | --- | --- | --- | --- | --- |
-| 1 | (write here) | (write here) | (write here) | (write here) |
-| 2 | (write here) | (write here) | (write here) | (write here) |
-| 3 | (write here) | (write here) | (write here) | (write here) |
+| 1 | (first "Claim 1") `start <= now` in `booking.py` wrongly rejects a booking that starts exactly at now | Ran `can_book(600, 660, 600, False, [])` -> False and `can_book(601, 660, 600, False, [])` -> True; T6 and `test_t6_starts_now_rejected` are green | reject | AC1 says start strictly after now, so False is correct. Gemini contradicted itself in the same answer and then dropped this claim. |
+| 2 | `now` is not type-checked, so `now = True` slips through | Ran `can_book(600, 660, True, False, [])` -> True (Python treats True as 1) | reject | The contract says `now` is always valid (0-1439). Checking it would add a rule that is not in AC1-AC5. |
+| 3 | AC6: the function returns a bare bool instead of a message, and nothing is made for mobile | The contract requires `True`/`False`. On the page, T5 showed "Bookings cannot be longer than 120 minutes" and T7 "Start time must be earlier than end time" | modify | AC6 is about the page, not the function. The function stays a bool; the feedback point is valid only for the page, and v1 already shows a reason. Narrow width is checked by T12 and `final-narrow.png`, not by the function. |
+| 4 | A malformed tuple in `existing`, like `(600, 660, 720)`, crashes with ValueError | Ran it: `ValueError: too many values to unpack (expected 2)` -> the claim is true | reject | The contract says `existing` holds valid `(start, end)` pairs. Adding a guard is out of scope; it changes no AC1-AC5 result for valid input. |
+
+**What the critique missed:** it never mentioned the real AC1 defect in the TypeScript v1, `if (start < currentTime)` in `src/availability.ts`, which lets start == current time through. That is what T6 showed on the page (Available). So the review found nothing true that mattered and missed the one real bug.
 
 ## 9. Coding-agent analysis
 
@@ -451,22 +454,134 @@ def can_book(start: int, end: int, now: int, blocked: bool, existing: list) -> b
 
 ### B3
 
-- **Tool:** (write here)
-- **Model:** (write here)
-- **Date:** (write here)
-- **Stage:** (write here)
-- **Source:** (write here)
+- **Tool:** Gemini (web), new chat
+- **Model:** Gemini 2.5 Flash
+- **Date:** 2026-11-09
+- **Stage:** Critique
+- **Source:** this SIS
 
 **Prompt:**
 
 ~~~~text
-(paste here)
+[Attached files: sis-03/code/booking.py, sis-03/web/original/project/src/availability.ts]
+
+Review this Python function can_book and this TypeScript availability logic against these acceptance criteria. List each problem as a separate claim with the AC it violates and a concrete input that shows it.
+AC1: integer minutes, 0 <= start < end <= 1440, start strictly after now.
+AC2: duration at most 120 minutes, exactly 120 allowed.
+AC3: reject every request when the room is blocked.
+AC4: reject overlap with any booking; touching endpoints are not overlap.
+AC5: unambiguous Available/Unavailable; never mutate existing bookings.
+AC6: understandable validation feedback; usable on narrow/mobile screens.
 ~~~~
 
 **Response:**
 
 ~~~~text
-(paste here)
+To analyze the Python function `can_book` in `booking.py` and the TypeScript availability logic against Acceptance Criteria AC1–AC6, we examine each piece of logic step-by-step to identify violations, cite the violated AC, and provide concrete input values demonstrating the bug.
+
+---
+
+### **Issue Claims & AC Violations**
+
+#### **Claim 1: Incorrect rejection of immediate bookings starting right now (`start == now`)**
+
+* **AC Violated:** **AC1** (*"0 <= start < end <= 1440, start strictly after now"*)
+* **Problem:** In `booking.py` (line 6), the Python implementation evaluates `if not (0 <= start < end <= 1440) or start <= now: return False`. Because it uses `start <= now`, it rejects any valid booking that starts exactly at `now`. However, AC1 states that `start` must be strictly after `now` (`start > now`).
+* **Concrete Input:**
+* `start = 600`
+* `end = 660`
+* `now = 600`
+* `blocked = False`
+* `existing = []`
+
+
+* **Observed vs Expected:**
+* **Observed:** Returns `False`
+
+
+* **Expected:** Returns `True` (since `0 <= 600 < 660 <= 1440` and `600 > 599`, or `start` is strictly after `now` if `now` was 599; when `start == 600` and `now == 600`, `start > now` is `False`, which correctly rejects, but when `start = 601` and `now = 600`, it passes. Specifically, the function checks `start <= now` to return `False`, which correctly enforces `start > now`. However, checking the contract in `booking.py`: `start <= now` returns `False`, which means it requires `start > now`. But notebook source AC1 specifies `start >= now` in original contracts vs prompt text stating `start strictly after now`. Under the prompt's explicit AC1 (*start strictly after now*), `start <= now` returning `False` enforces `start > now`).
+
+
+
+Let's re-verify line 6 of `booking.py`:
+`if not (0 <= start < end <= 1440) or start <= now:`
+
+* If `start = 600` and `now = 540`: `start <= now` is `600 <= 540` (False), so it proceeds.
+* If `start = 600` and `now = 600`: `start <= now` is `600 <= 600` (True), returning `False`. Since AC1 in the prompt requires **start strictly after now** (`start > now`), returning `False` for `start == now` is compliant with `start > now`.
+
+Let's carefully check all lines in `booking.py` against AC1–AC6:
+
+---
+
+### **Claim 1: Type checking rejects valid non-boolean integer subtypes or misses missing parameters / improper types**
+
+* **AC Violated:** **AC1** (*"integer minutes, 0 <= start < end <= 1440, start strictly after now"*)
+* **Problem:** `booking.py` only validates integer types for `start` and `end` (`for v in (start, end): if isinstance(v, bool) or not isinstance(v, int): return False`), but it fails to check `isinstance(now, int)` or validate that `now` is not a `bool`. If `now` is passed as a boolean or float, type safety under AC1 is compromised.
+
+
+* **Concrete Input:**
+* `start = 600`, `end = 660`, `now = True`, `blocked = False`, `existing = []`
+
+
+* **Observed vs Expected:**
+* **Observed:** `start <= now` evaluates `600 <= True` (False in Python 3, since `True == 1`), leading to evaluation continuing instead of failing type validation.
+* **Expected:** `False` due to invalid `now` parameter type under AC1 integer minute requirements.
+
+
+
+---
+
+### **Claim 2: Incomplete validation feedback and lack of mobile/responsive screen support in TypeScript UI**
+
+* **AC Violated:** **AC6** (*"understandable validation feedback; usable on narrow/mobile screens"*)
+* **Problem:** Returning a plain boolean (`True`/`False`) without explanation does not provide understandable feedback to end users when a booking is rejected (e.g., distinguishing whether the room is blocked, the duration exceeds 120 minutes, or there is a schedule overlap). Furthermore, fixed-width UI components or raw boolean responses fail to provide responsive layout controls suitable for narrow mobile displays.
+* **Concrete Input:**
+* `start = 600`, `end = 780` (180 minutes duration), `now = 540`, `blocked = False`, `existing = []`
+
+
+* **Observed vs Expected:**
+* **Observed:** Function returns a bare `False`.
+
+
+* **Expected:** Returns descriptive user-facing validation feedback (e.g., `"Duration exceeds maximum limit of 120 minutes"`) formatted for mobile viewports.
+
+
+
+---
+
+### **Claim 3: Missing validation for existing booking tuple structure in AC4**
+
+* **AC Violated:** **AC4** (*"reject overlap with any booking; touching endpoints are not overlap"*) & **AC5** (*"unambiguous Available/Unavailable; never mutate existing bookings"*)
+* **Problem:** In `booking.py`, `all(end <= s or start >= e for s, e in existing)` assumes every entry in `existing` is a valid 2-element sequence `(s, e)`. If `existing` contains malformed elements or non-tuple data, the function raises a `ValueError`/`TypeError` crash instead of cleanly returning `False` or handling availability unambiguously under AC5.
+
+
+* **Concrete Input:**
+* `start = 660`, `end = 720`, `now = 540`, `blocked = False`, `existing = [(600, 660, 720)]`
+
+
+* **Observed vs Expected:**
+* **Observed:** Raises `ValueError: too many values to unpack (expected 2)`.
+
+
+* **Expected:** Returns `False` unambiguously without crashing.
+
+
+
+---
+
+### **Summary of Acceptance Criteria Mapping**
+
+| # | AC Violated | Claim / Problem | Concrete Input Example |
+| --- | --- | --- | --- |
+| **1** | **AC1** | `now` parameter is not validated for integer type, allowing boolean/non-integer values to bypass type checks.
+
+ | `can_book(600, 660, True, False, [])` |
+| **2** | **AC4 / AC5** | Unpacking `existing` tuples without structure checks causes unhandled exceptions rather than unambiguous `False` decisions.
+
+ | `can_book(660, 720, 540, False, [(600, 660, 720)])` |
+| **3** | **AC6** | Returning binary booleans provides no understandable validation messages or mobile-adapted status feedback for UI integration.
+
+ | `can_book(600, 780, 540, False, [])` |
 ~~~~
 
 ### B4
