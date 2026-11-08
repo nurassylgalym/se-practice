@@ -12,6 +12,7 @@ import {
 import type { Booking, Room, Verdict } from './types';
 import { ROOMS, INITIAL_BOOKINGS } from './sampleData';
 import { evaluateAvailability, fmt, MINUTES_PER_DAY_EXPORT } from './availability';
+import { canBook } from './booking';
 
 const toMinutes = (hhmm: string): number => {
   if (!/^\d{1,2}:\d{2}$/.test(hhmm)) return NaN;
@@ -32,16 +33,7 @@ function App() {
     [roomId]
   );
 
-  const start = startStr ? toMinutes(startStr) : NaN;
-  const end = endStr ? toMinutes(endStr) : NaN;
-
-  const hasInput = Boolean(roomId && startStr && endStr);
-  const result = hasInput
-    ? evaluateAvailability(room, start, end, currentTime, bookings)
-    : null;
-  const verdict: Verdict = !result ? 'idle' : result.ok ? 'available' : 'unavailable';
-
-  const roomBookings = useMemo(
+    const roomBookings = useMemo(
     () =>
       room
         ? bookings
@@ -50,6 +42,20 @@ function App() {
         : [],
     [bookings, room]
   );
+
+  const start = startStr ? toMinutes(startStr) : NaN;
+  const end = endStr ? toMinutes(endStr) : NaN;
+
+  const hasInput = Boolean(roomId && startStr && endStr);
+  const allowed =
+    hasInput && room
+      ? canBook({ start, end, now: currentTime, blocked: room.blocked, bookings: roomBookings })
+      : null;
+  // result is used only for the validation message text
+  const result = hasInput
+    ? evaluateAvailability(room, start, end, currentTime, bookings)
+    : null;
+  const verdict: Verdict = allowed === null ? 'idle' : allowed ? 'available' : 'unavailable';
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
