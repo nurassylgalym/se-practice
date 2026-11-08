@@ -647,7 +647,7 @@ Use the same IDs as `known_fails` in `submission.yml`. Write `none` if the run i
 
 | Check | Why it stays |
 | --- | --- |
-| | |
+| none | The last checker run gave 33 PASS, 0 FAIL, 0 ERROR. An earlier run failed A4 only because `node_modules/` was on my disk inside `app/` (it is in `.gitignore` and was never committed). I deleted the folder and ran the checker again. |
 
 ### 9.2 Original and improved suites
 
