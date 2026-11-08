@@ -82,7 +82,7 @@
 
 | Branch in v1 (quoted) | AC | Satisfies it? | Why |
 | --- | --- | --- | --- |
-| `if not (0 <= start < end <= 1440 and start >= now): return False` | AC1 | No | Day bounds and order are right, but `start >= now` lets a request that starts exactly now pass. AC1 says strictly after now. T6 (540-570, now 540) returned True on v1. Final uses `start <= now` -> reject. |
+| `if not (0 <= start < end <= 1440 and start >= now): return False` | AC1 | No | Day bounds and order are right, but `start >= now` lets a request that starts exactly now pass. My Week 05 prompt itself said `start >= now` and the plan repeated it ("immediate bookings starting right now are valid"), so v1 followed my prompt; the SIS AC1 says strictly after now. T6 (540-570, now 540) returned True on v1. Final uses `start <= now` -> reject. |
 | `if (end - start) > 120: return False` | AC2 | Yes | `>` rejects 121 and keeps exactly 120. T4 True, T5 False on v1. |
 | `if blocked: return False` | AC3 | Yes | Any request on a blocked room is rejected, whatever the time. T3 False on v1. |
 | `for b_start, b_end in existing: if start < b_end and end > b_start: return False` | AC4 | Yes | Strict `<` and `>` mean touching endpoints are not overlap, and the loop checks every booking. T1 True, T2 False, T10 False on v1. |
@@ -243,72 +243,209 @@ Build a small responsive Smart Campus Room Availability Checker. Requirements: A
 **Prompt:**
 
 ~~~~text
-(paste here)
+[Message 1 in the same chat — context]
+Scenario: Smart Campus study room booking.
+User story: As a student, I want to check a room's availability so that I can choose a valid booking time.
+Feature: implement can_book(...) for one selected room. Return a decision.
+The complete system handles saving and confirmation.
+Function contract
+can_book(start, end, now, blocked, existing)
+Times are integer minutes after midnight on one date. Example: 600 means 10:00.
+now is valid (0-1439). blocked is a Boolean.
+existing contains valid (start, end) tuples for this room's active bookings only.
+Return True or False. Keep all inputs unchanged.
+Acceptance criteria
+AC1: 0 <= start < end <= 1440, and start >= now.
+AC2: Duration is at most 120 minutes.
+AC3: The room is not blocked.
+AC4: No overlap with an existing booking. Touching endpoints are allowed.
+AC5: Return True only when AC1-AC4 hold. Return False otherwise and never alter existing.
+Intervals include the start and exclude the end.
+This is the scenario, the function contract and the acceptance criteria. Use only these.
+Wait for my first request.
+
+[Gemini's reply to message 1]
+Acknowledge the contract, scenario, and acceptance criteria. Ready when you are—send over your first request!
+
+[Message 2 — the plan request]
+Propose a short implementation plan for can_book. List the checks in order and identify assumptions. Use Python 3 and the supplied rules. Do not write code yet. Suggest boundary cases that could expose an incorrect implementation.
 ~~~~
 
 **Response:**
 
 ~~~~text
-Here is the proposed implementation plan, ordered check sequence, assumptions, and suggested boundary cases for can_book.
+Here is the proposed implementation plan, ordered check sequence, assumptions, and suggested boundary cases for `can_book`.
 
 Implementation Plan & Ordered Checks
 To evaluate the booking decision cleanly and fail fast, the function checks the acceptance criteria in the following order:
 
-Check Parameter Integrity & AC1 (Time Boundaries & Chronology):
-- Check if 0<=start<end<=1440.
-- Check if start>=now.
-- If any of these fail, return False.
+1. Check Parameter Integrity & AC1 (Time Boundaries & Chronology):
 
-Check AC2 (Maximum Duration):
-- Calculate duration=end-start.
-- Check if duration<=120.
-- If false, return False.
+   * Check if $0 \le \text{start} < \text{end} \le 1440$.
 
-Check AC3 (Room Blocked Status):
-- Check if blocked is True.
-- If true, return False.
+   * Check if $\text{start} \ge \text{now}$.
 
-Check AC4 (Overlap with Existing Bookings):
-- Iterate through each tuple (b_start, b_end) in existing.
-- Check for an overlap using interval logic: two intervals [start,end) and [b_start,b_end) overlap if and only if start<b_end and end>b_start.
-- If an overlap is found, return False.
+   * If any of these fail, return `False`.
 
-Decision (AC5):
-- If all checks pass, return True.
+2. Check AC2 (Maximum Duration):
+
+   * Calculate $\text{duration} = \text{end} - \text{start}$.
+
+   * Check if $\text{duration} \le 120$.
+
+   * If false, return `False`.
+
+3. Check AC3 (Room Blocked Status):
+
+   * Check if `blocked` is `True`.
+
+   * If true, return `False`.
+
+4. Check AC4 (Overlap with Existing Bookings):
+
+   * Iterate through each tuple `(b_start, b_end)` in `existing`.
+
+   * Check for an overlap using interval logic: two intervals $[\text{start}, \text{end})$ and $[b\_start, b\_end)$ overlap if and only if $\text{start} < b\_end$ and $\text{end} > b\_start$.
+
+   * If an overlap is found, return `False`.
+
+5. Decision (AC5):
+
+   * If all checks pass, return `True`.
 
 Key Assumptions
-- Zero-Modification Guarantee: The function will read existing strictly without altering the list or its inner tuples.
-- Interval Boundary Model: Intervals are half-open [start,end), meaning touching endpoints (e.g., existing booking [600,660) and new request [660,720)) satisfy 660<660=>False for overlap, allowing contiguous bookings.
-- Midnight Boundary: Total minutes in a single day are represented up to 1440 (24:00). Requests starting at or after 1440 or ending after 1440 are invalid.
-- Input Types: All time values (start, end, now) are valid integers, blocked is a boolean, and existing is a list of valid integer pairs.
+
+* Zero-Modification Guarantee: The function will read `existing` strictly without altering the list or its inner tuples.
+
+* Interval Boundary Model: Intervals are half-open $[start, end)$, meaning touching endpoints (e.g., existing booking $[600, 660)$ and new request $[660, 720)$) satisfy $660 < 660 \implies \text{False}$ for overlap, allowing contiguous bookings.
+
+* Midnight Boundary: Total minutes in a single day are represented up to $1440$ (24:00). Requests starting at or after $1440$ or ending after $1440$ are invalid.
+
+* Input Types: All time values (`start`, `end`, `now`) are valid integers, `blocked` is a boolean, and `existing` is a list of valid integer pairs.
 
 Suggested Boundary Test Cases
-- Touching Endpoints (Valid Contiguous Slots)
-- Partial & Enclosed Overlaps
-- Maximum Duration Bounds (AC2)
-- Immediate Start (AC1)
-- Day Limit Endpoints (AC1)
-- Invalid Interval Shapes
+
+1. Touching Endpoints (Valid Contiguous Slots):
+
+   * Request: `start = 660`, `end = 720`, `now = 540`, `blocked = False`, `existing = [(600, 660)]` $\rightarrow$ Expected: `True`.
+
+   * Request: `start = 540`, `end = 600`, `now = 540`, `blocked = False`, `existing = [(600, 660)]` $\rightarrow$ Expected: `True`.
+
+2. Partial & Enclosed Overlaps:
+
+   * Request overlapping existing slot $[600, 660)$: `start = 630`, `end = 690` $\rightarrow$ Expected: `False`.
+
+   * Existing slot $[600, 720)$ completely enclosing request $[630, 660)$: `start = 630`, `end = 660` $\rightarrow$ Expected: `False`.
+
+3. Maximum Duration Bounds (AC2):
+
+   * Exactly 120 minutes: `start = 600`, `end = 720` $\rightarrow$ Expected: `True`.
+
+   * 121 minutes: `start = 600`, `end = 721` $\rightarrow$ Expected: `False`.
+
+4. Immediate Start (AC1):
+
+   * Booking starting right now: `start = now`, `end = now + 60` $\rightarrow$ Expected: `True`.
+
+   * Booking starting 1 minute in the past: `start = now - 1` $\rightarrow$ Expected: `False`.
+
+5. Day Limit Endpoints (AC1):
+
+   * Ending exactly at midnight: `start = 1320`, `end = 1440`, `now = 1200` $\rightarrow$ Expected: `True`.
+
+   * Ending beyond midnight: `start = 1380`, `end = 1441` $\rightarrow$ Expected: `False`.
+
+6. Invalid Interval Shapes:
+
+   * Zero duration (`start == end`): `start = 600`, `end = 600` $\rightarrow$ Expected: `False`.
+
+   * Negative duration (`start > end`): `start = 700`, `end = 600` $\rightarrow$ Expected: `False`.
 ~~~~
 
 ### B2
 
-- **Tool:** (write here)
-- **Model:** (write here)
-- **Date:** (write here)
-- **Stage:** (write here)
-- **Source:** (write here)
+- **Tool:** Gemini (web)
+- **Model:** Gemini 2.5 Flash
+- **Date:** 2026-10-10
+- **Stage:** Generate
+- **Source:** week-05
 
 **Prompt:**
 
 ~~~~text
-(paste here)
+Implement can_book in booking.py using the supplied contract and AC1-AC5. Keep the signature. Use only the standard library. Do not modify existing. Return the function and explain each condition. Keep the feature within the stated scope.
 ~~~~
 
 **Response:**
 
 ~~~~text
-(paste here)
+Here is the implementation for `can_book` in `booking.py`, followed by an explanation of each condition.
+
+```python
+def can_book(start: int, end: int, now: int, blocked: bool, existing: list) -> bool:
+    """
+    Determines if a study room can be booked given the request parameters and constraints.
+    
+    Parameters:
+        start (int): Start time in minutes after midnight (0-1440).
+        end (int): End time in minutes after midnight (0-1440).
+        now (int): Current time in minutes after midnight (0-1439).
+        blocked (bool): True if the room is blocked by an administrator.
+        existing (list): List of (start, end) tuples for active bookings on this room.
+        
+    Returns:
+        bool: True if all acceptance criteria AC1-AC4 hold, False otherwise.
+    """
+    # AC1: Check time bounds, interval ordering, and chronology
+    if not (0 <= start < end <= 1440 and start >= now):
+        return False
+
+    # AC2: Check maximum booking duration limit (120 minutes)
+    if (end - start) > 120:
+        return False
+
+    # AC3: Check if room is blocked
+    if blocked:
+        return False
+
+    # AC4: Check for interval overlaps with existing active bookings
+    # Interval overlap condition for half-open intervals [start, end) and [b_start, b_end):
+    # Two intervals overlap if and only if start < b_end and end > b_start.
+    for b_start, b_end in existing:
+        if start < b_end and end > b_start:
+            return False
+
+    # AC5: Return True only when all AC1-AC4 conditions pass
+    return True
+
+```
+
+---
+
+### Condition Explanations
+
+1. **`0 <= start < end <= 1440 and start >= now` (AC1)**
+* `0 <= start`: The booking cannot start before midnight (minute 0).
+* `start < end`: Ensures a positive duration; prevents zero-length (`start == end`) or inverted (`start > end`) time intervals.
+* `end <= 1440`: The booking must end within the same date (1440 minutes = 24 hours).
+* `start >= now`: Prevents booking time slots in the past; immediate bookings starting right `now` are valid.
+
+
+2. **`(end - start) <= 120` / `(end - start) > 120` (AC2)**
+* Enforces the maximum duration limit of 120 minutes (2 hours). Requests exceeding 120 minutes return `False`.
+
+
+3. **`if blocked:` (AC3)**
+* Rejects any booking request if the room is marked as blocked by an administrator.
+
+
+4. **`start < b_end and end > b_start` (AC4)**
+* Tests for overlap between the requested interval $[\text{start}, \text{end})$ and each existing booking $[\text{b\_start}, \text{b\_end})$.
+* Using strict inequalities handles half-open intervals properly: touching endpoints (e.g., existing $[600, 660)$ and request $[660, 720)$) evaluate to `660 < 660` (which is `False`), allowing contiguous bookings without false overlap flags.
+
+
+5. **Return Decision (AC5)**
+* Returns `True` if and only if no checks fail. The input list `existing` is iterated over directly without mutation or reordering, strictly maintaining input immutability.
 ~~~~
 
 ### B3
