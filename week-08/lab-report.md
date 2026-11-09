@@ -1,7 +1,7 @@
 # Week 08 — Lab report
 
 **Name:** Nurassyl Galym
-**Group:** CSCI2208 
+**Group:**
 **Date:** 2026-11-09
 
 Fill in every section. **Do not delete, rename or renumber the headings.** The checker and the
@@ -72,8 +72,200 @@ You copied the whole `canBook` function from `buggy/booking.ts` (or `.js`) over 
 nothing else. This is the real output:
 
 ```text
-(paste here)
+ RUN  v3.2.4 C:/Users/Nurassyl Galym/Desktop/KBTU/Software Engineering/Lab Week 1/se-practice/week-08/app
+
+ ❯ src/booking.test.ts (24 tests | 9 failed) 19ms
+   × canBook — plan T01–T14 > T01 AC4: 660–720 touches the booking end, allowed 10ms
+     → expected false to be true // Object.is equality
+   ✓ canBook — plan T01–T14 > T02 AC1: 540–570 starts exactly at now, rejected 0ms
+   ✓ canBook — plan T01–T14 > T03 AC1: 720–720 zero duration, rejected 0ms
+   ✓ canBook — plan T01–T14 > T04 AC1: 750–720 reversed, rejected 0ms
+   ✓ canBook — plan T01–T14 > T05 AC1: 1380–1441 past the end of the day, rejected 0ms
+   × canBook — plan T01–T14 > T06 AC2: 720–840 exactly 120 minutes, allowed 1ms
+     → Cannot add property 1, object is not extensible
+   ✓ canBook — plan T01–T14 > T07 AC2: 720–841 is 121 minutes, rejected 0ms
+   × canBook — plan T01–T14 > T08 AC4: 570–600 touches the booking start, allowed 1ms
+     → expected false to be true // Object.is equality
+   ✓ canBook — plan T01–T14 > T09 AC4: 630–690 partial overlap, rejected 0ms
+   ✓ canBook — plan T01–T14 > T10 AC4: 570–690 contains the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T11 AC4: 615–645 inside the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T12 AC4: 600–660 identical to the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T13 AC3: 660–720 in a blocked room, rejected 0ms
+   × canBook — plan T01–T14 > T14 AC4: 630–690 with no bookings, allowed 0ms
+     → Cannot add property 0, object is not extensible
+   × canBook — own cases and extra boundaries > X1 AC1: 1380–1440 ends exactly at 24:00, allowed 0ms
+     → Cannot add property 1, object is not extensible
+   × canBook — own cases and extra boundaries > X2 AC4: 660–720 touches two bookings, allowed 1ms
+     → expected false to be true // Object.is equality
+   × canBook — own cases and extra boundaries > B01 AC1: 541–570 first minute after now, allowed 0ms
+     → Cannot add property 1, object is not extensible
+   ✓ canBook — own cases and extra boundaries > B02 AC1: 660–720 with now 700, rejected 0ms
+   × canBook — own cases and extra boundaries > B03 AC1: 701–720 with now 700, allowed 0ms
+     → Cannot add property 1, object is not extensible
+   ✓ canBook — own cases and extra boundaries > B04 AC4: 659–720 one minute over the booking end, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B05 AC4: 570–601 one minute into the booking start, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B06 AC4: 700–750 overlaps only the second booking, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B07 AC4: 630–690 overlaps a booking listed second in an unsorted list, rejected 0ms
+   × canBook — data preservation > AC5: an Available request leaves the bookings unchanged 0ms
+     → expected false to be true // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/booking.test.ts > canBook — plan T01–T14 > T01 AC4: 660–720 touches the booking end, allowed
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/booking.test.ts:25:29
+     23| describe('canBook — plan T01–T14', () => {
+     24|   test('T01 AC4: 660–720 touches the booking end, allowed', () => {
+     25|     expect(check(660, 720)).toBe(true);
+       |                             ^
+     26|   });
+     27|   test('T02 AC1: 540–570 starts exactly at now, rejected', () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  src/booking.test.ts > canBook — plan T01–T14 > T06 AC2: 720–840 exactly 120 minutes, allowed
+TypeError: Cannot add property 1, object is not extensible
+ ❯ Module.canBook src/booking.ts:24:12
+     22|   }
+     23|   // keep the room's list current with the slot that was just found f…
+     24|   bookings.push({ start, end });
+       |            ^
+     25|   return true;
+     26| }
+ ❯ check src/booking.test.ts:18:18
+ ❯ src/booking.test.ts:40:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  src/booking.test.ts > canBook — plan T01–T14 > T08 AC4: 570–600 touches the booking start, allowed
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/booking.test.ts:46:29
+     44|   });
+     45|   test('T08 AC4: 570–600 touches the booking start, allowed', () => {
+     46|     expect(check(570, 600)).toBe(true);
+       |                             ^
+     47|   });
+     48|   test('T09 AC4: 630–690 partial overlap, rejected', () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  src/booking.test.ts > canBook — plan T01–T14 > T14 AC4: 630–690 with no bookings, allowed
+TypeError: Cannot add property 0, object is not extensible
+ ❯ Module.canBook src/booking.ts:24:12
+     22|   }
+     23|   // keep the room's list current with the slot that was just found f…
+     24|   bookings.push({ start, end });
+       |            ^
+     25|   return true;
+     26| }
+ ❯ check src/booking.test.ts:18:18
+ ❯ src/booking.test.ts:64:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  src/booking.test.ts > canBook — own cases and extra boundaries > X1 AC1: 1380–1440 ends exactly at 24:00, allowed
+TypeError: Cannot add property 1, object is not extensible
+ ❯ Module.canBook src/booking.ts:24:12
+     22|   }
+     23|   // keep the room's list current with the slot that was just found f…
+     24|   bookings.push({ start, end });
+       |            ^
+     25|   return true;
+     26| }
+ ❯ check src/booking.test.ts:18:18
+ ❯ src/booking.test.ts:70:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  src/booking.test.ts > canBook — own cases and extra boundaries > X2 AC4: 660–720 touches two bookings, allowed
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/booking.test.ts:73:48
+     71|   });
+     72|   test('X2 AC4: 660–720 touches two bookings, allowed', () => {
+     73|     expect(check(660, 720, { bookings: TWO })).toBe(true);
+       |                                                ^
+     74|   });
+     75|   test('B01 AC1: 541–570 first minute after now, allowed', () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  src/booking.test.ts > canBook — own cases and extra boundaries > B01 AC1: 541–570 first minute after now, allowed
+TypeError: Cannot add property 1, object is not extensible
+ ❯ Module.canBook src/booking.ts:24:12
+     22|   }
+     23|   // keep the room's list current with the slot that was just found f…
+     24|   bookings.push({ start, end });
+       |            ^
+     25|   return true;
+     26| }
+ ❯ check src/booking.test.ts:18:18
+ ❯ src/booking.test.ts:76:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  src/booking.test.ts > canBook — own cases and extra boundaries > B03 AC1: 701–720 with now 700, allowed
+TypeError: Cannot add property 1, object is not extensible
+ ❯ Module.canBook src/booking.ts:24:12
+     22|   }
+     23|   // keep the room's list current with the slot that was just found f…
+     24|   bookings.push({ start, end });
+       |            ^
+     25|   return true;
+     26| }
+ ❯ check src/booking.test.ts:18:18
+ ❯ src/booking.test.ts:82:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  src/booking.test.ts > canBook — data preservation > AC5: an Available request leaves the bookings unchanged
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/booking.test.ts:102:83
+    100|     const bookings = [{ start: 600, end: 660 }];
+    101|     const before = structuredClone(bookings);
+    102|     expect(canBook({ start: 660, end: 720, now: NOW, blocked: false, …
+       |                                                                                   ^
+    103|     expect(bookings).toEqual(before);
+    104|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  9 failed | 15 passed (24)
+   Start at  16:27:58
+   Duration  1.91s (transform 85ms, setup 0ms, collect 87ms, tests 19ms, environment 0ms, prepare 206ms)
 ```
+
+9 of 24 tests fail on the provided canBook. Two kinds of failure: T01, T08, X2 and AC5 return `false` for a request that only touches a booking (BUG-A). T06, T14, X1, B01 and B03 throw `TypeError: Cannot add property …, object is not extensible` at `bookings.push` (line 24), because my Week 07 helper `fresh()` passes a frozen array (BUG-B). AC5 fails for the wrong reason: its request 660–720 touches the booking, so BUG-A rejects it before the push is ever reached.
+
 
 ### 2.3 One failing test per bug
 

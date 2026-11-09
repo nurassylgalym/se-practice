@@ -1,0 +1,48 @@
+Scenario: Smart Campus room availability. Continue the Smart Campus project from Practice #06 and the tests from Practice #07.
+User story: As a student, I want to check a room's availability so that I can choose a valid booking time.
+Use one room, fictional bookings, fixed time, and a Boolean availability decision. No login or database.
+
+AC1 Reject start ≥ end and requests in the past.
+AC2 Enforce the maximum allowed duration (120 minutes).
+AC3 Reject a blocked room.
+AC4 Reject overlaps; allow bookings that only touch at endpoints.
+AC5 Return Available / Unavailable without changing booking data.
+AC6 Preserve clear UI feedback on desktop and mobile.
+
+Failing test output:
+ FAIL  src/booking.test.ts > canBook — plan T01–T14 > T01 AC4: 660–720 touches the booking end, allowed
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/booking.test.ts:25:29
+     23| describe('canBook — plan T01–T14', () => {
+     24|   test('T01 AC4: 660–720 touches the booking end, allowed', () => {
+     25|     expect(check(660, 720)).toBe(true);
+       |                             ^
+     26|   });
+     27|   test('T02 AC1: 540–570 starts exactly at now, rejected', () => {
+
+Code of canBook:
+export function canBook({ start, end, now, blocked, bookings }: {
+  start: number;
+  end: number;
+  now: number;
+  blocked: boolean;
+  bookings: { start: number; end: number }[];
+}): boolean {
+  if (!(0 <= start && start < end && end <= 1440)) return false;
+  if (!(start > now)) return false;
+  if (end - start > 120) return false;
+  if (blocked) return false;
+  for (const b of bookings) {
+    if (start <= b.end && end >= b.start) return false;
+  }
+  // keep the room's list current with the slot that was just found free
+  bookings.push({ start, end });
+  return true;
+}
