@@ -129,18 +129,20 @@ Build a small responsive Smart Campus Room Availability Checker. Requirements: A
 
 | Case | Name | Input | Expected | Python v1 | Python final | Page v1 | Page final |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| T1 | Touching | 660–720 | Available | True | True | Not testable | |
-| T2 | Overlap | 630–690 | Unavailable | False | False | Not testable | |
-| T3 | Blocked | 660–720, blocked | Unavailable | False | False | Not testable | |
-| T4 | Exactly 120 min | 720–840 | Available | True | True | Available | |
-| T5 | 121 min | 720–841 | Unavailable | False | False | Unavailable | |
-| T6 | Starts now | 540–570 | Unavailable | True | False | Available | |
-| T7 | Reversed | 720–660 | Unavailable | False | False | Unavailable | |
-| T8 | Ends at midnight | 1380–1440 | Available | True | True | Not testable | |
-| T9 | Past midnight | 1380–1441 | Unavailable | False | False | Not testable | |
-| T10 | Second booking | 720–780, existing (600–660), (700–760) | Unavailable | False | False | Not testable | |
-| T11 | Same check twice | 660–720, twice | Available | True | True | Not testable | |
-| T12 | Narrow screen | T1 at ~375 px wide | Available | n/a | n/a | Not testable | |
+| T1 | Touching | 660–720 | Available | True | True | Not testable | Available |
+| T2 | Overlap | 630–690 | Unavailable | False | False | Not testable | Unavailable |
+| T3 | Blocked | 660–720, blocked | Unavailable | False | False | Not testable | Unavailable |
+| T4 | Exactly 120 min | 720–840 | Available | True | True | Available | Available |
+| T5 | 121 min | 720–841 | Unavailable | False | False | Unavailable | Unavailable |
+| T6 | Starts now | 540–570 | Unavailable | True | False | Available | Unavailable |
+| T7 | Reversed | 720–660 | Unavailable | False | False | Unavailable | Unavailable |
+| T8 | Ends at midnight | 1380–1440 | Available | True | True | Not testable | Not testable |
+| T9 | Past midnight | 1380–1441 | Unavailable | False | False | Not testable | Not testable |
+| T10 | Second booking | 720–780, existing (600–660), (700–760) | Unavailable | False | False | Not testable | Unavailable |
+| T11 | Same check twice | 660–720, twice | Available | True | True | Not testable | Available |
+| T12 | Narrow screen | T1 at ~375 px wide | Available | n/a | n/a | Not testable | Available |
+
+Page final runs, 2026-11-09, Bolt preview, current time 09:00, rooms after repair 1 (Da Vinci 305: only 10:00-11:00; Hopper 330: 10:00-11:00 and 11:40-12:40). T1 Da Vinci 11:00-12:00; T2 Da Vinci 10:30-11:30 ("Overlaps an existing booking (10:00-11:00 by Art Studio)"); T3 Turing 110 11:00-12:00 ("Turing 110 is currently blocked and cannot be booked"); T4-T7 Da Vinci as in v1, T6 now "Start time must be strictly after the current time"; T8/T9 the end field stops at 23:59, typing 24 is not accepted; T10 Hopper 330 12:00-13:00 ("Overlaps an existing booking (11:40-12:40 by Writing Workshop)"); T11 Da Vinci 11:00-12:00, end changed to 12:30 and back to 12:00, Available again with the bookings list unchanged; T12 T1 in Chrome DevTools at iPhone SE 375x667, Available (`evidence/final-narrow.png`).
 
 ## 6. Traceability
 
@@ -149,12 +151,12 @@ Build a small responsive Smart Campus Room Availability Checker. Requirements: A
 
 | AC | Implementation / file | Test input | Expected | v1 actual | Final actual |
 | --- | --- | --- | --- | --- | --- |
-| AC1 | (write here) | (write here) | (write here) | (write here) | (write here) |
-| AC2 | (write here) | (write here) | (write here) | (write here) | (write here) |
-| AC3 | (write here) | (write here) | (write here) | (write here) | (write here) |
-| AC4 | (write here) | (write here) | (write here) | (write here) | (write here) |
-| AC5 | (write here) | (write here) | (write here) | (write here) | (write here) |
-| AC6 | (write here) | (write here) | (write here) | (write here) | (write here) |
+| AC1 | `code/booking.py` lines 3-7; page `src/availability.ts` `validateInterval` | T6, T7, T8, T9 | T6/T7/T9 reject, T8 accept | Python: T6 True (fault), T7/T9 False, T8 True. Page: T6 Available (fault), T7 Unavailable, T8/T9 Not testable | Python: all as expected. Page: T6/T7 Unavailable, T8/T9 Not testable |
+| AC2 | `code/booking.py` line 8; page `validateDuration` | T4, T5 | T4 accept, T5 reject | Python T4 True, T5 False; page Available / Unavailable | Python T4 True, T5 False; page Available / Unavailable |
+| AC3 | `code/booking.py` line 10; page `checkRoomBlocked` | T3 | reject | Python False; page Not testable (Turing 110 disabled in the dropdown) | Python False; page Unavailable with the blocked reason |
+| AC4 | `code/booking.py` line 12; page `checkOverlap` | T1, T2, T10 | T1 accept, T2/T10 reject | Python T1 True, T2/T10 False; page Not testable (no room with only 10:00-11:00) | Python T1 True, T2/T10 False; page Available / Unavailable / Unavailable |
+| AC5 | `code/booking.py` returns a bool and only reads `existing`; page `evaluateAvailability` never writes bookings | T11, `test_t11_same_check_twice_and_no_mutation` | Available twice, list unchanged | Python True; page Not testable | Python True; page Available twice, bookings list unchanged |
+| AC6 | page `src/App.tsx` reason line under the verdict, responsive layout | T5, T7, T12 | clear reason; usable at 375 px | Page: reasons shown for T5/T7; T12 Not testable | Page: reasons shown; T12 Available at 375 px, single column |
 
 ## 7. Issue log
 
@@ -165,10 +167,13 @@ Build a small responsive Smart Campus Room Availability Checker. Requirements: A
 
 | # | Issue | Reproduction | Priority | Prompt / change | Retest result |
 | --- | --- | --- | --- | --- | --- |
-| 1 | (write here) | (write here) | (write here) | (write here) | (write here) |
-| 2 | (write here) | (write here) | (write here) | (write here) | (write here) |
+| 1 | Base data for T1, T2, T10, T11, T12 cannot be set up on the page: no room has 10:00-11:00 as its only booking and bookings cannot be edited | Page v1, all rooms checked: Da Vinci 305 only 16:00-17:00, Feynman 220 10:00-11:30. T1/T2/T10/T11/T12 Not testable (AC4, AC5) | High | Bolt: "Cases T1, T2, T10 and T11 cannot be set up: no sample room has 10:00-11:00 as its only booking (Da Vinci 305 has only 16:00-17:00). Change only src/sampleData.ts: make Da Vinci 305's only booking 10:00-11:00, and add one fictional room "Hopper 330" (not blocked) with exactly two bookings, 10:00-11:00 and 11:40-12:40. Change nothing else." Bolt read and edited only `src/sampleData.ts` | The preview first still showed 16:00-17:00; after a manual reload Da Vinci 305 shows 10:00-11:00 and Hopper 330 shows both bookings. T1 Available, T2 Unavailable, T10 Unavailable, T11 Available twice, T12 Available |
+| 2 | "Current time (sim)" ignores 00:00 and keeps the old value, so midnight cannot be used as now | Typed 0000 + Tab in the field -> it stayed 09:00 (AC1, AC6). Code: the handler falls back to the old value with a logical OR, and 0 is falsy | Medium | Bolt: "Typing 00:00 into "Current time (sim)" is ignored and the field keeps the old value, so a current time of midnight cannot be tested (AC1). Make the smallest change in src/App.tsx so 00:00 is accepted. Change nothing else." Bolt searched, read and edited only `src/App.tsx`, then built the project | Bolt said it had not tested in a browser. I typed 0000 + Tab after reload: the field shows 00:00. T1-T7, T10-T12 rerun, unchanged |
+| 3 | The exported project still lists `@supabase/supabase-js`, a database client nothing imports (out of scope, security) | Downloaded `web/final/project/package.json`, line 14: `"@supabase/supabase-js": "^2.57.4"`; the brief excludes database and backend, and nothing in AC1-AC6 needs one; the checker had flagged the same in v1 | High | Bolt: "package.json lists "@supabase/supabase-js", a database client, but nothing in src imports it, and the brief excludes any database or backend. Remove only this dependency from package.json and package-lock.json. Change nothing else." Bolt searched for supabase, read package.json, removed it with the package manager and rebuilt | `package.json` in the new export has no supabase; T1 still Available after reload. Bolt offered to also fix npm audit warnings: rejected, out of scope |
+| 4 | (carried from week-06 final) start equal to current time accepted | Page v1 T6: 09:00-09:30 at 09:00 -> Available (AC1) | High | week-06 prompt in `src/availability.ts`: `start < currentTime` -> `start <= currentTime` | T6 final: Unavailable, "Start time must be strictly after the current time" |
+| 5 | (carried from week-06 final) blocked room disabled in the dropdown, so AC3 is never shown | Page v1 T3: Turing 110 greyed out, cannot be selected (AC3) | Medium | week-06 prompt in `src/App.tsx`: removed `disabled` and the `[blocked]` suffix from the options | T3 final: Unavailable, "Turing 110 is currently blocked and cannot be booked" |
 
-**Before / after:** `evidence/before-1.png` → `evidence/after-1.png` show issue (write here)
+**Before / after:** `evidence/before-1.png` → `evidence/after-1.png` show issue 1: before, Da Vinci 305 has only the 16:00-17:00 booking so T1 cannot be set up; after, Da Vinci 305 has only 10:00-11:00 and 11:00-12:00 shows Available
 
 ## 8. Critique decisions
 
@@ -193,12 +198,12 @@ Build a small responsive Smart Campus Room Availability Checker. Requirements: A
 
 | Step | What happened in this assignment |
 | --- | --- |
-| User goal | (write here) |
-| Model / plan | (write here) |
-| Tool call | (write here) |
-| Observation | (write here) |
-| Next step | (write here) |
-| Human review | (write here) |
+| User goal | Make 00:00 usable in "Current time (sim)" (issue 2, AC1) without touching anything else |
+| Model / plan | Bolt (GLM 5.3 Flash) said in its reply that midnight is stored as 0, which the old handler treated as no value, and planned to change only that handler |
+| Tool call | Bolt showed 4 actions: Searched `sim|Current time`, Read `src/App.tsx`, Edited `src/App.tsx`, Built project to verify changes |
+| Observation | The build passed, but Bolt wrote that it had no browser tool and had not tested the field, and asked me to check it |
+| Next step | Bolt stopped and handed back. I reloaded the preview, typed 0000 + Tab, and the field kept 00:00; then I reran T1-T7 and T10-T12 |
+| Human review | I checked which files it touched (only App.tsx), confirmed the fix by hand, and only then exported the final. In repair 1 the same review caught that the preview still showed the old data until a manual reload |
 
 ### 9.2 Context, tools and permissions
 
@@ -207,15 +212,16 @@ Build a small responsive Smart Campus Room Availability Checker. Requirements: A
 
 | Tool | Context it used | Tools or permissions | Observed or assumed |
 | --- | --- | --- | --- |
-| (write here) | (write here) | (write here) | (write here) |
-| (write here) | (write here) | (write here) | (write here) |
-| (write here) | (write here) | (write here) | (write here) |
+| Bolt.new (repair 1) | The project files; its action list shows it read `src/sampleData.ts` before and after editing | Read and edit project files; it edited only the file my prompt allowed | Observed |
+| Bolt.new (repair 2) | Searched the project for "sim / Current time", then read `src/App.tsx` | Edit files and run a build in its sandbox; no browser (it said so itself) | Observed |
+| Bolt.new (in general) | Probably the whole project plus the earlier chat, not only the files in the action list | It could also install packages or rewrite any file, since nothing I saw limits it to one file; my prompt was the only limit | Assumed |
+| Gemini 2.5 Flash (critique, new chat) | Only the two attached files and my prompt; it named lines from them | No code execution: it described outputs like "raises ValueError" without running anything (I ran them myself) | Assumed |
 
 ### 9.3 Checkpoint and dependability
 
-**Safety checkpoint:** (write here)
+**Safety checkpoint:** Before I accept any AI change I look at which files it touched, reload and run the affected cases myself (T1-T12 on the page, `python -m unittest` for the function), and check the export for network calls, storage, login or new packages.
 
-**Reliability, security, responsibility:** (write here)
+**Reliability, security, responsibility:** The agent reported success twice in a way I could not trust as is: once the preview still showed old data, once it said it never tested in a browser. So reliability comes from my reruns, not from its summary. Security: v1 shipped a Supabase database client nobody asked for, so I read the dependencies before accepting an export. The agent can edit and build, but deciding that the result is correct and in scope stays my responsibility, because I am the one who submits it.
 
 ## 10. Reflection
 
@@ -225,7 +231,7 @@ Build a small responsive Smart Campus Room Availability Checker. Requirements: A
      recommendation you rejected or modified, and why; what you would improve next without
      expanding the scope. -->
 
-(write here)
+The Python part felt much safer than the Bolt part. With can_book I could read every line and run 20 tests. With Bolt I only saw the page, so I clicked through every case by hand and still couldn't test some of them. Reliability: v1 accepted a start equal to now (T6). Gemini didn't invent that, it copied `start >= now` from my own Week 05 prompt, so the AI repeats my mistakes too. Usability: on the v1 page I couldn't set up T1, and 00:00 as current time was ignored. Security: Bolt added a Supabase database client to a project that needs no database. Bolt also said its fixes worked, but once the preview still showed old data and once it admitted it never opened a browser. So review, tests and deciding what the tool may touch stay my job. I rejected Gemini's advice to type-check `now`, because the contract says inputs are valid, and Bolt's offer to fix npm warnings, because it was out of scope. Next I would let the end field reach 24:00 so T8 and T9 become testable.
 
 ## 11. Appendix A — AI exchanges
 
@@ -586,22 +592,37 @@ Let's carefully check all lines in `booking.py` against AC1–AC6:
 
 ### B4
 
-- **Tool:** (write here)
-- **Model:** (write here)
-- **Date:** (write here)
-- **Stage:** (write here)
-- **Source:** (write here)
+- **Tool:** Bolt.new
+- **Model:** GLM 5.3 Flash
+- **Date:** 2026-11-09
+- **Stage:** Repair
+- **Source:** this SIS
 
 **Prompt:**
 
 ~~~~text
-(paste here)
+[Repair 1]
+Cases T1, T2, T10 and T11 cannot be set up: no sample room has 10:00-11:00 as its only booking (Da Vinci 305 has only 16:00-17:00). Change only src/sampleData.ts: make Da Vinci 305's only booking 10:00-11:00, and add one fictional room "Hopper 330" (not blocked) with exactly two bookings, 10:00-11:00 and 11:40-12:40. Change nothing else.
+
+[Repair 2, same project, next message]
+Typing 00:00 into "Current time (sim)" is ignored and the field keeps the old value, so a current time of midnight cannot be tested (AC1). Make the smallest change in src/App.tsx so 00:00 is accepted. Change nothing else.
+
+[Repair 3, same project, next message]
+package.json lists "@supabase/supabase-js", a database client, but nothing in src imports it, and the brief excludes any database or backend. Remove only this dependency from package.json and package-lock.json. Change nothing else.
 ~~~~
 
 **Response:**
 
 ~~~~text
-(paste here)
+[Repair 1 — 3 actions taken: Read src/sampleData.ts, Edited src/sampleData.ts, Read src/sampleData.ts]
+I updated the sample data so the three test cases can now be set up. Da Vinci 305's only booking is now 10:00-11:00. I added a new room, Hopper 330, which is not blocked and has two bookings: 10:00-11:00 and 11:40-12:40. No other files were changed.
+
+[Repair 2 — 4 actions taken: Searched sim|Current time, Read src/App.tsx, Edited src/App.tsx, Built project to verify changes]
+The "Current time (sim)" field now accepts 00:00. The cause was that midnight is stored as zero, which the old code treated as "no value" and ignored. I changed only the handler for that field in the app file, and the project builds successfully. I haven't tested it in a browser, since there's no browser tool here, so please try typing 00:00 in that field to confirm.
+
+[Repair 3 — 2 actions taken: Searched supabase, Read package.json; 2 commands executed: Remove unused supabase-js dependency, Verify project still builds]
+The source has no Supabase imports, so the dependency is unused. I'll remove it with the package manager so the lock file stays consistent.
+I removed the unused database client from the project's dependencies, and the project still builds. Nothing in the app used it, and I did not touch any other dependencies or code. The package manager also reported existing security warnings in the installed packages; I left those alone since you asked for only this change, but I can look at them if you want.
 ~~~~
 
 ## 12. Appendix B — Test output
@@ -661,4 +682,6 @@ C:\Users\Nurassyl Galym\Desktop\KBTU\Software Engineering\Lab Week 1\se-practice
 
 | Check ID or limitation | Why it stays | What I would do next |
 | --- | --- | --- |
-| (write here) | (write here) | (write here) |
+| T8, T9 on the page | `<input type="time">` stops at 23:59, so 24:00 and 24:01 cannot be entered; marked Not testable (C4 accepts this). The Python function covers both (T8 True, T9 False) | Replace the end field with one that can express 24:00, without changing AC1 |
+| npm audit warnings in the Bolt export | Bolt reported existing security warnings in installed dev packages; fixing them was not asked and is outside AC1-AC6, so I left them | Review them separately, upgrade only if a fix keeps the page in scope |
+| `now` and `existing` are not validated in `can_book` | The contract says `now` is valid and `existing` holds valid pairs, so extra checks would add rules (critique rows 2 and 4) | Nothing, unless the contract changes |
