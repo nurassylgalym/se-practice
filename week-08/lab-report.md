@@ -861,8 +861,111 @@ Rerun the test that was failing, then the full suite.
 The change as a diff (`git diff`, or the old and the new line), then the real run:
 
 ```text
-(paste here)
+diff --git a/week-08/app/src/booking.ts b/week-08/app/src/booking.ts
+index 1f12ebb..290596f 100644
+--- a/week-08/app/src/booking.ts
++++ b/week-08/app/src/booking.ts
+@@ -18,7 +18,7 @@ export function canBook({ start, end, now, blocked, bookings }: {
+   if (end - start > 120) return false;
+   if (blocked) return false;
+   for (const b of bookings) {
+-    if (start <= b.end && end >= b.start) return false;
++    if (start < b.end && end > b.start) return false;
+   }
+   // keep the room's list current with the slot that was just found free
+   bookings.push({ start, end });
+
+> npx vitest run -t "BUG-A"
+
+ RUN  v3.2.4 C:/Users/Nurassyl Galym/Desktop/KBTU/Software Engineering/Lab Week 1/se-practice/week-08/app
+
+ ✓ src/booking.test.ts (26 tests | 25 skipped) 5ms
+   ↓ canBook — plan T01–T14 > T01 AC4: 660–720 touches the booking end, allowed
+   ↓ canBook — plan T01–T14 > T02 AC1: 540–570 starts exactly at now, rejected
+   ↓ canBook — plan T01–T14 > T03 AC1: 720–720 zero duration, rejected
+   ↓ canBook — plan T01–T14 > T04 AC1: 750–720 reversed, rejected
+   ↓ canBook — plan T01–T14 > T05 AC1: 1380–1441 past the end of the day, rejected
+   ↓ canBook — plan T01–T14 > T06 AC2: 720–840 exactly 120 minutes, allowed
+   ↓ canBook — plan T01–T14 > T07 AC2: 720–841 is 121 minutes, rejected
+   ↓ canBook — plan T01–T14 > T08 AC4: 570–600 touches the booking start, allowed
+   ↓ canBook — plan T01–T14 > T09 AC4: 630–690 partial overlap, rejected
+   ↓ canBook — plan T01–T14 > T10 AC4: 570–690 contains the booking, rejected
+   ↓ canBook — plan T01–T14 > T11 AC4: 615–645 inside the booking, rejected
+   ↓ canBook — plan T01–T14 > T12 AC4: 600–660 identical to the booking, rejected
+   ↓ canBook — plan T01–T14 > T13 AC3: 660–720 in a blocked room, rejected
+   ↓ canBook — plan T01–T14 > T14 AC4: 630–690 with no bookings, allowed
+   ↓ canBook — own cases and extra boundaries > X1 AC1: 1380–1440 ends exactly at 24:00, allowed
+   ↓ canBook — own cases and extra boundaries > X2 AC4: 660–720 touches two bookings, allowed
+   ↓ canBook — own cases and extra boundaries > B01 AC1: 541–570 first minute after now, allowed
+   ↓ canBook — own cases and extra boundaries > B02 AC1: 660–720 with now 700, rejected
+   ↓ canBook — own cases and extra boundaries > B03 AC1: 701–720 with now 700, allowed
+   ↓ canBook — own cases and extra boundaries > B04 AC4: 659–720 one minute over the booking end, rejected
+   ↓ canBook — own cases and extra boundaries > B05 AC4: 570–601 one minute into the booking start, rejected
+   ↓ canBook — own cases and extra boundaries > B06 AC4: 700–750 overlaps only the second booking, rejected
+   ↓ canBook — own cases and extra boundaries > B07 AC4: 630–690 overlaps a booking listed second in an unsorted list, rejected
+   ↓ canBook — data preservation > AC5: an Available request leaves the bookings unchanged
+   ✓ canBook — regression tests for the provided bugs > BUG-A AC4: 690–720 touches only the start of the second booking, allowed 2ms
+   ↓ canBook — regression tests for the provided bugs > BUG-B AC5: 720–780 touches nothing, Available, bookings unchanged
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 25 skipped (26)
+   Start at  17:06:38
+   Duration  823ms (transform 65ms, setup 0ms, collect 75ms, tests 5ms, environment 0ms, prepare 197ms)
+
+> npx vitest run
+
+ RUN  v3.2.4 C:/Users/Nurassyl Galym/Desktop/KBTU/Software Engineering/Lab Week 1/se-practice/week-08/app
+
+ ❯ src/booking.test.ts (26 tests | 10 failed) 48ms
+   × canBook — plan T01–T14 > T01 AC4: 660–720 touches the booking end, allowed 13ms
+     → Cannot add property 1, object is not extensible
+   ✓ canBook — plan T01–T14 > T02 AC1: 540–570 starts exactly at now, rejected 2ms
+   ✓ canBook — plan T01–T14 > T03 AC1: 720–720 zero duration, rejected 1ms
+   ✓ canBook — plan T01–T14 > T04 AC1: 750–720 reversed, rejected 1ms
+   ✓ canBook — plan T01–T14 > T05 AC1: 1380–1441 past the end of the day, rejected 0ms
+   × canBook — plan T01–T14 > T06 AC2: 720–840 exactly 120 minutes, allowed 1ms
+     → Cannot add property 1, object is not extensible
+   ✓ canBook — plan T01–T14 > T07 AC2: 720–841 is 121 minutes, rejected 0ms
+   × canBook — plan T01–T14 > T08 AC4: 570–600 touches the booking start, allowed 1ms
+     → Cannot add property 1, object is not extensible
+   ✓ canBook — plan T01–T14 > T09 AC4: 630–690 partial overlap, rejected 1ms
+   ✓ canBook — plan T01–T14 > T10 AC4: 570–690 contains the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T11 AC4: 615–645 inside the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T12 AC4: 600–660 identical to the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T13 AC3: 660–720 in a blocked room, rejected 0ms
+   × canBook — plan T01–T14 > T14 AC4: 630–690 with no bookings, allowed 1ms
+     → Cannot add property 0, object is not extensible
+   × canBook — own cases and extra boundaries > X1 AC1: 1380–1440 ends exactly at 24:00, allowed 2ms
+     → Cannot add property 1, object is not extensible
+   × canBook — own cases and extra boundaries > X2 AC4: 660–720 touches two bookings, allowed 3ms
+     → Cannot add property 2, object is not extensible
+   × canBook — own cases and extra boundaries > B01 AC1: 541–570 first minute after now, allowed 2ms
+     → Cannot add property 1, object is not extensible
+   ✓ canBook — own cases and extra boundaries > B02 AC1: 660–720 with now 700, rejected 1ms
+   × canBook — own cases and extra boundaries > B03 AC1: 701–720 with now 700, allowed 1ms
+     → Cannot add property 1, object is not extensible
+   ✓ canBook — own cases and extra boundaries > B04 AC4: 659–720 one minute over the booking end, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B05 AC4: 570–601 one minute into the booking start, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B06 AC4: 700–750 overlaps only the second booking, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B07 AC4: 630–690 overlaps a booking listed second in an unsorted list, rejected 0ms
+   × canBook — data preservation > AC5: an Available request leaves the bookings unchanged 11ms
+     → expected [ { start: 600, end: 660 }, …(1) ] to deeply equal [ { start: 600, end: 660 } ]
+   ✓ canBook — regression tests for the provided bugs > BUG-A AC4: 690–720 touches only the start of the second booking, allowed 1ms
+   × canBook — regression tests for the provided bugs > BUG-B AC5: 720–780 touches nothing, Available, bookings unchanged 2ms
+     → expected [ { start: 600, end: 660 }, …(1) ] to deeply equal [ { start: 600, end: 660 } ]
+
+ [the 10 detailed failure blocks are left out here: T01, T06, T08, T14, X1, X2, B01, B03 all point at
+  "TypeError ... booking.ts:24:12  bookings.push({ start, end });"; AC5 and BUG-B show the extra element
+  { start: 660, end: 720 } / { start: 720, end: 780 } in bookings]
+
+ Test Files  1 failed (1)
+      Tests  10 failed | 16 passed (26)
+   Start at  17:06:45
+   Duration  1.17s (transform 76ms, setup 0ms, collect 108ms, tests 48ms, environment 0ms, prepare 259ms)
 ```
+
+The BUG-A test passes after the one-line change. The full suite still has 10 failures, and all of them are BUG-B: T01, T08 and X2 used to fail on `false` (BUG-A) and now get past the overlap check, reach `bookings.push` on my frozen fixtures and throw `TypeError`. AC5 now fails for its real reason, the extra `{ start: 660, end: 720 }`. So BUG-A was hiding BUG-B in these tests. The only part I left out of the full run is the ten detailed failure blocks, as noted inside the block.
+
 
 ### 8.2 The BUG-B patch and the final run
 
