@@ -1,7 +1,7 @@
 # Week 08 — Lab report
 
 **Name:** Nurassyl Galym
-**Group:**
+**Group:** CSCI2208
 **Date:** 2026-11-09
 
 Fill in every section. **Do not delete, rename or renumber the headings.** The checker and the
@@ -972,8 +972,97 @@ The BUG-A test passes after the one-line change. The full suite still has 10 fai
 The change as a diff, then the real output of the **full** suite. Every test must pass.
 
 ```text
-(paste here)
+diff --git a/week-08/app/src/booking.ts b/week-08/app/src/booking.ts
+index 290596f..a2655ac 100644
+--- a/week-08/app/src/booking.ts
++++ b/week-08/app/src/booking.ts
+@@ -20,7 +20,5 @@ export function canBook({ start, end, now, blocked, bookings }: {
+   for (const b of bookings) {
+     if (start < b.end && end > b.start) return false;
+   }
+-  // keep the room's list current with the slot that was just found free
+-  bookings.push({ start, end });
+   return true;
+ }
+\ No newline at end of file
+
+> npx vitest run -t "BUG-B"
+
+ RUN  v3.2.4 C:/Users/Nurassyl Galym/Desktop/KBTU/Software Engineering/Lab Week 1/se-practice/week-08/app
+
+ ✓ src/booking.test.ts (26 tests | 25 skipped) 4ms
+   ↓ canBook — plan T01–T14 > T01 AC4: 660–720 touches the booking end, allowed
+   ↓ canBook — plan T01–T14 > T02 AC1: 540–570 starts exactly at now, rejected
+   ↓ canBook — plan T01–T14 > T03 AC1: 720–720 zero duration, rejected
+   ↓ canBook — plan T01–T14 > T04 AC1: 750–720 reversed, rejected
+   ↓ canBook — plan T01–T14 > T05 AC1: 1380–1441 past the end of the day, rejected
+   ↓ canBook — plan T01–T14 > T06 AC2: 720–840 exactly 120 minutes, allowed
+   ↓ canBook — plan T01–T14 > T07 AC2: 720–841 is 121 minutes, rejected
+   ↓ canBook — plan T01–T14 > T08 AC4: 570–600 touches the booking start, allowed
+   ↓ canBook — plan T01–T14 > T09 AC4: 630–690 partial overlap, rejected
+   ↓ canBook — plan T01–T14 > T10 AC4: 570–690 contains the booking, rejected
+   ↓ canBook — plan T01–T14 > T11 AC4: 615–645 inside the booking, rejected
+   ↓ canBook — plan T01–T14 > T12 AC4: 600–660 identical to the booking, rejected
+   ↓ canBook — plan T01–T14 > T13 AC3: 660–720 in a blocked room, rejected
+   ↓ canBook — plan T01–T14 > T14 AC4: 630–690 with no bookings, allowed
+   ↓ canBook — own cases and extra boundaries > X1 AC1: 1380–1440 ends exactly at 24:00, allowed
+   ↓ canBook — own cases and extra boundaries > X2 AC4: 660–720 touches two bookings, allowed
+   ↓ canBook — own cases and extra boundaries > B01 AC1: 541–570 first minute after now, allowed
+   ↓ canBook — own cases and extra boundaries > B02 AC1: 660–720 with now 700, rejected
+   ↓ canBook — own cases and extra boundaries > B03 AC1: 701–720 with now 700, allowed
+   ↓ canBook — own cases and extra boundaries > B04 AC4: 659–720 one minute over the booking end, rejected
+   ↓ canBook — own cases and extra boundaries > B05 AC4: 570–601 one minute into the booking start, rejected
+   ↓ canBook — own cases and extra boundaries > B06 AC4: 700–750 overlaps only the second booking, rejected
+   ↓ canBook — own cases and extra boundaries > B07 AC4: 630–690 overlaps a booking listed second in an unsorted list, rejected
+   ↓ canBook — data preservation > AC5: an Available request leaves the bookings unchanged
+   ↓ canBook — regression tests for the provided bugs > BUG-A AC4: 690–720 touches only the start of the second booking, allowed
+   ✓ canBook — regression tests for the provided bugs > BUG-B AC5: 720–780 touches nothing, Available, bookings unchanged 2ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 25 skipped (26)
+   Start at  17:08:59
+   Duration  894ms (transform 70ms, setup 0ms, collect 81ms, tests 4ms, environment 0ms, prepare 163ms)
+
+> npx vitest run
+
+ RUN  v3.2.4 C:/Users/Nurassyl Galym/Desktop/KBTU/Software Engineering/Lab Week 1/se-practice/week-08/app
+
+ ✓ src/booking.test.ts (26 tests) 9ms
+   ✓ canBook — plan T01–T14 > T01 AC4: 660–720 touches the booking end, allowed 2ms
+   ✓ canBook — plan T01–T14 > T02 AC1: 540–570 starts exactly at now, rejected 0ms
+   ✓ canBook — plan T01–T14 > T03 AC1: 720–720 zero duration, rejected 0ms
+   ✓ canBook — plan T01–T14 > T04 AC1: 750–720 reversed, rejected 0ms
+   ✓ canBook — plan T01–T14 > T05 AC1: 1380–1441 past the end of the day, rejected 0ms
+   ✓ canBook — plan T01–T14 > T06 AC2: 720–840 exactly 120 minutes, allowed 0ms
+   ✓ canBook — plan T01–T14 > T07 AC2: 720–841 is 121 minutes, rejected 0ms
+   ✓ canBook — plan T01–T14 > T08 AC4: 570–600 touches the booking start, allowed 0ms
+   ✓ canBook — plan T01–T14 > T09 AC4: 630–690 partial overlap, rejected 0ms
+   ✓ canBook — plan T01–T14 > T10 AC4: 570–690 contains the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T11 AC4: 615–645 inside the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T12 AC4: 600–660 identical to the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T13 AC3: 660–720 in a blocked room, rejected 0ms
+   ✓ canBook — plan T01–T14 > T14 AC4: 630–690 with no bookings, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > X1 AC1: 1380–1440 ends exactly at 24:00, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > X2 AC4: 660–720 touches two bookings, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B01 AC1: 541–570 first minute after now, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B02 AC1: 660–720 with now 700, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B03 AC1: 701–720 with now 700, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B04 AC4: 659–720 one minute over the booking end, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B05 AC4: 570–601 one minute into the booking start, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B06 AC4: 700–750 overlaps only the second booking, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B07 AC4: 630–690 overlaps a booking listed second in an unsorted list, rejected 0ms
+   ✓ canBook — data preservation > AC5: an Available request leaves the bookings unchanged 0ms
+   ✓ canBook — regression tests for the provided bugs > BUG-A AC4: 690–720 touches only the start of the second booking, allowed 0ms
+   ✓ canBook — regression tests for the provided bugs > BUG-B AC5: 720–780 touches nothing, Available, bookings unchanged 0ms
+
+ Test Files  1 passed (1)
+      Tests  26 passed (26)
+   Start at  17:09:05
+   Duration  789ms (transform 67ms, setup 0ms, collect 70ms, tests 9ms, environment 0ms, prepare 180ms)
 ```
+
+The BUG-B change deletes `bookings.push({ start, end });` and the comment above it, which no longer says anything true. The checker counts code lines only, so this is one changed line, and two for both bugs. All 26 tests pass: T01–T14, X1, X2, B01–B07, AC5, `BUG-A` and `BUG-B`. What the deck asks for holds: the touching cases (T01, T08, X2, `BUG-A`) are Available, overlaps (T09–T12, B04–B07) are still rejected, and the bookings stay unchanged (AC5, `BUG-B`, and every `check()` call on a frozen fixture).
+
 
 ---
 
@@ -985,12 +1074,12 @@ Use the same IDs as `known_fails` in `submission.yml`. Write `none` if the run i
 
 | Check | Why it stays |
 | --- | --- |
-| | |
+| none | The last checker run was clean: 31 PASS, 0 FAIL, 0 ERROR. |
 
 ### 9.2 One limitation of AI-assisted debugging
 
 <!-- Use something that actually happened in sections 5-8. 20 words or more. -->
--
+- Neither assistant could see my test file, only one failing test, so neither knew that my Week 07 `check()` helper passes a frozen array. Neither predicted the `TypeError` in T06, T14, X1, B01 and B03, or that T01, T08 and X2 would fail again on BUG-B once BUG-A was fixed. The no-skill answer still proposed R04 as a test for BUG-B with a touching request (660–720), and that test passes on the buggy code. It also said 660–720 is "exactly 120 minutes". So a diagnosis is only as good as the input it gets, and it can sound confident and still be wrong. Only running the real suite showed me which test failed and why.
 
 ---
 
@@ -1005,3 +1094,5 @@ Use the same IDs as `known_fails` in `submission.yml`. Write `none` if the run i
      visible after the BUG-A patch: the AC5 test had been failing for the wrong reason." -->
 
 <!-- Write your conclusion below this line -->
+
+The skill helped, but less than I expected. Both chats found BUG-A and BUG-B from the same T01 failure. The difference was in the details. The skill answer gave a BUG-B test on 700–760, a request that touches nothing, so it fails for the right reason. The no-skill answer used 660–720, so BUG-A hid BUG-B. It also made two factual mistakes, which the skill answer did not. My tests proved more than either chat. My old AC5 test was failing for the wrong reason, and after the BUG-A fix T01, T08 and X2 failed again, now on `push`. The final run proves the touching and non-mutation cases on my inputs, not on every possible input, and nothing here checks AC6 in the UI.
