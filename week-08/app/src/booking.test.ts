@@ -103,3 +103,16 @@ describe('canBook — data preservation', () => {
     expect(bookings).toEqual(before);
   });
 });
+
+describe('canBook — regression tests for the provided bugs', () => {
+  test('BUG-A AC4: 690–720 touches only the start of the second booking, allowed', () => {
+    const bookings = [{ start: 600, end: 660 }, { start: 720, end: 780 }];
+    expect(canBook({ start: 690, end: 720, now: NOW, blocked: false, bookings })).toBe(true);
+  });
+  test('BUG-B AC5: 720–780 touches nothing, Available, bookings unchanged', () => {
+    const bookings = [{ start: 600, end: 660 }];
+    const before = structuredClone(bookings);
+    expect(canBook({ start: 720, end: 780, now: NOW, blocked: false, bookings })).toBe(true);
+    expect(bookings).toEqual(before);
+  });
+});
