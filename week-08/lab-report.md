@@ -13,9 +13,9 @@ grader find your answers by them. You can add rows to any table, but never remov
 
 | | |
 | --- | --- |
-| Assistant I debugged with (tool) | |
-| Exact model (with its version, or `not displayed`) | |
-| Where the skill was installed (ChatGPT / Claude web / Claude Code / prompt-only simulation) | |
+| Assistant I debugged with (tool) | Claude (claude.ai web, Pro plan) |
+| Exact model (with its version, or `not displayed`) | Claude Opus 5.5 (model picker shows "Opus 5.5") |
+| Where the skill was installed (ChatGPT / Claude web / Claude Code / prompt-only simulation) | Claude web |
 | Where I ran the tests (Bolt terminal / my computer / Codespace) | my computer (Windows, cmd) |
 | Vitest version (the `RUN  v…` line of a run) | 3.2.4 |
 | Language of my booking module (`ts` or `js`) — the file I copied from `buggy/` | ts |
@@ -539,16 +539,22 @@ One row per defect. At least **BUG-A and BUG-B**. "Suspected cause" is your hypo
 
 | Check | yes / no |
 | --- | --- |
-| The file is plain UTF-8 text, named exactly `SKILL.md` (not `SKILL.md.txt`) | yes / no |
-| The first and the closing YAML delimiter are exactly three hyphens: `---` | yes / no |
-| `name` is lowercase with hyphens, and `description` says WHEN to use it | yes / no |
-| I read the whole file once: no passwords, API keys or private student data | yes / no |
+| The file is plain UTF-8 text, named exactly `SKILL.md` (not `SKILL.md.txt`) | yes |
+| The first and the closing YAML delimiter are exactly three hyphens: `---` | yes |
+| `name` is lowercase with hyphens, and `description` says WHEN to use it | yes |
+| I read the whole file once: no passwords, API keys or private student data | yes |
 
 **The contents of `skills/bug-detector.zip`.** Paste the listing (Windows: open the ZIP and copy
 the paths; macOS/Linux: `unzip -l skills/bug-detector.zip`):
 
 ```text
-(paste here)
+Archive:  bug-detector.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+        0  2026-11-09 16:37   bug-detector/
+      570  2026-11-09 16:37   bug-detector/SKILL.md
+---------                     -------
+      570                     2 files
 ```
 
 **Installation.** Where you uploaded it, what the upload said, and whether a new chat showed the
@@ -556,6 +562,11 @@ skill as enabled. If upload was not available, write `prompt-only simulation` an
 Screenshot of the result: `evidence/install.png`.
 
 <!-- Write below this line -->
+
+I uploaded `skills/bug-detector.zip` on claude.ai (Pro plan): Персонализация (Customize) → Skills → upload. The upload gave no validation errors and showed the notice "Загружено: bug-detector". The skill page lists `bug-detector`, v1, with one file `SKILL.md` and the same seven steps, and the toggle is on (enabled). Screenshot: `evidence/install.png`.
+
+Note on how the file was made: the text of `SKILL.md` was copied word for word from README Part 2, step 3, and the ZIP was built with Claude's help, with my instructor's permission. I did not type it by hand. This is disclosed in `AI_USAGE.md`.
+
 
 ---
 
