@@ -35,7 +35,7 @@ checker:
   pass: 31
   fail: 0
   error: 0
-  commit: XXXXXXX      # REPLACE with: git rev-parse --short HEAD
+  commit: 522b394      # REPLACE with: git rev-parse --short HEAD
   known_fails: []
 
 verdict:
