@@ -16,7 +16,7 @@ them. Replace every `<!-- comment -->` with your own text (comments are ignored 
 | Assistant (frozen for the whole lab) | Claude (claude.ai) |
 | Exact model (or "not displayed") | Claude Opus 5.5, medium effort |
 | Three fresh chats for R1, R2, R3? (yes / no) | yes |
-| Python version (`python --version`) | [ВСТАВЬ: python --version] |
+| Python version (`python --version`) | Python 3.12.6 |
 
 ## 2. Your tool definition — a reason for every constraint
 
@@ -161,12 +161,44 @@ It throws away every commit made after this one on the week-09 branch and every 
 Paste the **whole** output of your last `python tests/check_tool.py`, unedited.
 
 ```text
-[ВСТАВЬ: полный вывод последнего прогона]
+PASS  D1    tool/check_room.json exists and is valid JSON
+PASS  D2    has name, description and inputSchema
+PASS  D3    name is exactly "check_room"
+PASS  D4    description: 25+ words, says minutes, 1440, and that it does not save
+PASS  D5    inputSchema: an object with exactly the five fields, all required
+PASS  D6    inputSchema uses only the keywords listed in README section 5
+PASS  S01   the R1 call, valid -> accept
+PASS  S02   no existing bookings: bookings = [] -> accept
+PASS  S03   end as a string: "11:00" -> refuse
+PASS  S04   now missing -> refuse
+PASS  S05   an extra field: "room": "204" -> refuse
+PASS  S06   start below the day: -30 -> refuse
+PASS  S07   end beyond the day: 1500 -> refuse
+PASS  S08   a booking with no end: {start: 660} -> refuse
+PASS  S09   blocked as a string: "false" -> refuse
+PASS  S10   start not a whole minute: 600.5 -> refuse
+PASS  S11   end at the end of the day: 1440 -> accept
+PASS  S12   a booking as a pair: [660, 720] -> refuse
+PASS  F1    calls\r1.json: a call to check_room
+PASS  F2    calls\r1.json: arguments valid against your schema
+PASS  F3    calls\r1.json: arguments equal the expected ones (README section 5, Part 2)
+PASS  F4    calls\r2.json: a call to check_room
+PASS  F5    calls\r2.json: arguments valid against your schema
+PASS  F6    calls\r2.json: arguments equal the expected ones (README section 5, Part 2)
+PASS  F7    calls/r3: exactly one of r3.json (it called) or r3.txt (it asked), not empty
+PASS  L1    section 5 names at least two acceptance criteria (AC1-AC6) the schema cannot check
+PASS  L2    section 6: A1-A8 each have allow / ask / block and a reason of 5+ words
+PASS  L3    section 7 names the checkpoint commit (a SHA)
+PASS  L4    section 10: a conclusion of 80-150 words
+PASS  L5    AI_USAGE.md filled in (a tool row, and signed)
+
+SUMMARY: 30 PASS · 0 FAIL · 0 ERROR  (of 30 checks)
+Paste this whole output into lab-report.md section 8, and these three numbers into submission.yml.
 ```
 
 ## 9. What still fails
 
-[ВСТАВЬ: "None" если 30/30. Если что-то FAIL — перечисли ID и причину]
+None — all 30 checks pass.
 
 ## 10. Conclusion (80–150 words)
 
