@@ -21,8 +21,8 @@ function check(start: number, end: number, o: Opts = {}) {
 }
 
 describe('canBook — plan T01–T14', () => {
-  test('T01 AC4: 660–720 touches the booking end, allowed', () => {
-    expect(check(660, 720)).toBe(true);
+  test('T01 B3 AC4: 660–720 touches the booking end, allowed', () => {
+    expect(canBook({ start: 660, end: 720, now: NOW, blocked: false, bookings: fresh(ONE) })).toBe(true);
   });
   test('T02 AC1: 540–570 starts exactly at now, rejected', () => {
     expect(check(540, 570)).toBe(false);
@@ -36,17 +36,17 @@ describe('canBook — plan T01–T14', () => {
   test('T05 AC1: 1380–1441 past the end of the day, rejected', () => {
     expect(check(1380, 1441)).toBe(false);
   });
-  test('T06 AC2: 720–840 exactly 120 minutes, allowed', () => {
-    expect(check(720, 840)).toBe(true);
+  test('T06 B1 AC2: 720–840 exactly 120 minutes, allowed', () => {
+    expect(canBook({ start: 720, end: 840, now: NOW, blocked: false, bookings: fresh(ONE) })).toBe(true);
   });
-  test('T07 AC2: 720–841 is 121 minutes, rejected', () => {
-    expect(check(720, 841)).toBe(false);
+  test('T07 B2 AC2: 720–841 is 121 minutes, rejected', () => {
+    expect(canBook({ start: 720, end: 841, now: NOW, blocked: false, bookings: fresh(ONE) })).toBe(false);
   });
   test('T08 AC4: 570–600 touches the booking start, allowed', () => {
     expect(check(570, 600)).toBe(true);
   });
-  test('T09 AC4: 630–690 partial overlap, rejected', () => {
-    expect(check(630, 690)).toBe(false);
+  test('T09 B4 AC4: 630–690 partial overlap, rejected', () => {
+    expect(canBook({ start: 630, end: 690, now: NOW, blocked: false, bookings: fresh(ONE) })).toBe(false);
   });
   test('T10 AC4: 570–690 contains the booking, rejected', () => {
     expect(check(570, 690)).toBe(false);

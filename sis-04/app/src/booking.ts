@@ -1,3 +1,5 @@
+import type { Room } from './rooms';
+
 export interface BookingRequest {
   start: number;
   end: number;
@@ -21,4 +23,9 @@ export function canBook({ start, end, now, blocked, bookings }: {
     if (start < b.end && end > b.start) return false;
   }
   return true;
+}
+// F3, F5: the check uses the chosen room's own blocked flag and bookings; unknown id -> not available.
+export function checkRoom(rooms: Room[], roomId: string, { start, end, now }: { start: number; end: number; now: number }): boolean {
+  const room = rooms.find((r) => r.id === roomId);
+  return room ? canBook({ start, end, now, blocked: room.blocked, bookings: room.bookings }) : false;
 }

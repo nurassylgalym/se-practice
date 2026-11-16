@@ -380,25 +380,51 @@ Step 6: Add the filter UI. [...] Clear roomId when the selected room drops out o
 
 ### 8.2 Exchange 2
 
-**Tool and model:** (write here)
-**Date:** (write here)
-**Purpose:** (write here)
+**Tool and model:** Claude (claude.ai), Claude Opus 5.5
+**Date:** 2026-11-16
+**Purpose:** implementation and tests for plan steps 1–3: src/rooms.ts, filterRooms, checkRoom, src/rooms.test.ts
 
 **Prompt:**
 
 ```text
-(paste here)
+Implement steps 1–3 of my plan in sis-04/app/src. Do not touch App.tsx, availability.ts or sampleData.ts yet.
+1. src/rooms.ts: export type Room = { id, name, capacity, equipment: string[], blocked, bookings: { start, end }[] }
+   and const ROOMS with the 5 rooms from sampleData.ts (same ids, names, capacities, blocked flags),
+   their 6 bookings nested by room, plus a fictional equipment list (projector, whiteboard, mic, ...).
+2. src/filter.ts: filterRooms(rooms, { attendees, equipment }) — F1 capacity >= attendees,
+   F2 the room has ALL selected items (empty selection = no constraint). Must not mutate input.
+3. src/booking.ts: keep canBook exactly as is; add checkRoom(rooms, roomId, { start, end, now }) that
+   finds the room by id and calls canBook with that room's blocked and bookings; unknown id -> false.
+4. A new test file src/rooms.test.ts with a FIXED catalog inside the file (not ROOMS), one test per case,
+   no mocks, no test.each, IDs as words in titles: F1, F2, F3, F4, F5, B5, B6, INT.
+   Expected values must come from the rules, not from running the code.
+Also tell me which titles in booking.test.ts I should extend with B1, B2, B3, B4.
+Keep the code compact.
 ```
 
 **Output used:**
 
 ```text
-(paste here)
+// src/filter.ts
+export function filterRooms(rooms: Room[], { attendees, equipment }: { attendees: number; equipment: string[] }): Room[] {
+  return rooms.filter((r) => r.capacity >= attendees && equipment.every((e) => r.equipment.includes(e)));
+}
+// src/booking.ts (canBook unchanged, added below it)
+export function checkRoom(rooms: Room[], roomId: string, { start, end, now }: { start: number; end: number; now: number }): boolean {
+  const room = rooms.find((r) => r.id === roomId);
+  return room ? canBook({ start, end, now, blocked: room.blocked, bookings: room.bookings }) : false;
+}
+// src/rooms.test.ts — fixed CATALOG a(10, projector, booked 600–660), b(20, projector+whiteboard),
+// c(30, projector+whiteboard, blocked), d(8, whiteboard); 11 tests: F1, B5 F1, B6 F1, F2 x2, F4, F3,
+// F5 x2, AC5 F5, INT [...]
+Extend: T06 -> B1, T07 -> B2, T01 -> B3, T09 -> B4.
 ```
 
-**Problems found:** (write here)
-**Changes made:** (write here)
-**Verified by:** (write here)
+**Problems found:** (1) The first answer said to only add B1–B4 to the titles of T01, T06, T07 and T09, but those tests call my helper `check()`, not `canBook`, and README section 9 says B1–B4 must call `canBook` or `checkRoom`. (2) `rooms.ts` drops `bookedBy` from the bookings, because the fixed `Room` type has only `start` and `end`, so the page will no longer show who booked a slot.
+
+**Changes made:** in T01, T06, T07 and T09 the helper call was replaced by a direct `canBook({ ..., bookings: fresh(ONE) })` with the same times and the same expected value; the frozen bookings still make any write throw. I accepted dropping `bookedBy` to keep the required `Room` shape. I checked each expected value in `rooms.test.ts` against F1–F5 by hand, e.g. F1 for 15 attendees must keep only the 20- and 30-seat rooms.
+
+**Verified by:** `npx vitest run` in `app/` on my machine: `Test Files 2 passed (2)`, `Tests 37 passed (37)` (26 old + 11 new). The assistant also reported a mutation check: `every` → `some` fails 5 tests including F2, `>=` → `>` fails B5, `blocked: false` in checkRoom fails F3 and INT.
 
 ### 8.3 Exchange 3
 
