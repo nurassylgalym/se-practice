@@ -7,7 +7,7 @@ including anything an AI tool produced.
 | Tool | Exact model / plan | Used for | Which files it touched |
 | --- | --- | --- | --- |
 | Claude (claude.ai) | Claude Opus 5.5, medium effort | Part 2 — writing the calls for R1, R2, R3 | calls/ (saved by me, unedited) |
-| Claude (claude.ai) | Claude Opus 5.5 | Wrote tool/check_room.json, drafted lab-report.md sections 2, 3, 5, 6, 7, 10, AI_USAGE.md and submission.yml; explained the git and checker steps | tool/check_room.json, lab-report.md, AI_USAGE.md, submission.yml |
+| Claude (claude.ai) | Claude Opus 5.5 | Wrote tool/check_room.json; drafted the text of all lab-report.md sections (the model replies in §4 and the checker output in §8 are pasted by me from real runs), AI_USAGE.md and submission.yml; explained the git and checker steps | tool/check_room.json, lab-report.md, AI_USAGE.md, submission.yml |
 
 **I wrote `tool/check_room.json` myself:** no
 Claude wrote the whole definition. I checked it by running `python tests/check_tool.py`: D1–D6 and S01–S12 all pass, and I went through which constraint refuses which S case (lab-report §2–3).
