@@ -37,7 +37,7 @@ checker:
   pass: 31
   fail: 0
   error: 0
-  commit: "XXXXXXX"    # replace with: git rev-parse --short HEAD at the moment you ran the checker
+  commit: "156238a"    # replace with: git rev-parse --short HEAD at the moment you ran the checker
   known_fails: []
 
 review_findings:
