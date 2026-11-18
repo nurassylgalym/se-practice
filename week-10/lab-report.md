@@ -567,8 +567,60 @@ index b786d88..7627192 100644
 The risk it covers: **R2**. The real run, with the new test failing:
 
 ```text
-(paste here)
+ RUN  v3.2.4 C:/Users/Nurassyl Galym/Desktop/KBTU/Software Engineering/Lab Week 1/se-practice/week-10/app
+
+ ❯ src/booking.test.ts (27 tests | 1 failed) 18ms
+   ✓ canBook — plan T01–T14 > T01 AC4: 660–720 touches the booking end, allowed 3ms
+   ✓ canBook — plan T01–T14 > T02 AC1: 540–570 starts exactly at now, rejected 0ms
+   ✓ canBook — plan T01–T14 > T03 AC1: 720–720 zero duration, rejected 0ms
+   ✓ canBook — plan T01–T14 > T04 AC1: 750–720 reversed, rejected 0ms
+   ✓ canBook — plan T01–T14 > T05 AC1: 1380–1441 past the end of the day, rejected 0ms
+   ✓ canBook — plan T01–T14 > T06 AC2: 720–840 exactly 120 minutes, allowed 0ms
+   ✓ canBook — plan T01–T14 > T07 AC2: 720–841 is 121 minutes, rejected 0ms
+   ✓ canBook — plan T01–T14 > T08 AC4: 570–600 touches the booking start, allowed 0ms
+   ✓ canBook — plan T01–T14 > T09 AC4: 630–690 partial overlap, rejected 0ms
+   ✓ canBook — plan T01–T14 > T10 AC4: 570–690 contains the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T11 AC4: 615–645 inside the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T12 AC4: 600–660 identical to the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T13 AC3: 660–720 in a blocked room, rejected 0ms
+   ✓ canBook — plan T01–T14 > T14 AC4: 630–690 with no bookings, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > X1 AC1: 1380–1440 ends exactly at 24:00, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > X2 AC4: 660–720 touches two bookings, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B01 AC1: 541–570 first minute after now, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B02 AC1: 660–720 with now 700, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B03 AC1: 701–720 with now 700, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B04 AC4: 659–720 one minute over the booking end, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B05 AC4: 570–601 one minute into the booking start, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B06 AC4: 700–750 overlaps only the second booking, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B07 AC4: 630–690 overlaps a booking listed second in an unsorted list, rejected 0ms
+   ✓ canBook — data preservation > AC5: an Available request leaves the bookings unchanged 0ms
+   ✓ canBook — regression tests for the provided bugs > BUG-A AC4: 690–720 touches only the start of the second booking, allowed 0ms
+   ✓ canBook — regression tests for the provided bugs > BUG-B AC5: 720–780 touches nothing, Available, bookings unchanged 0ms
+   × canBook — risk register regressions > R2 AC1: current time 00:00 sets now to 0, not the previous value 6ms
+     → parseNow is not a function
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/booking.test.ts > canBook — risk register regressions > R2 AC1: current time 00:00 sets now to 0, not the previous value
+TypeError: parseNow is not a function
+ ❯ src/booking.test.ts:122:12
+    120| describe('canBook — risk register regressions', () => {
+    121|   test('R2 AC1: current time 00:00 sets now to 0, not the previous value', () => {
+    122|     expect(parseNow('00:00', 540)).toBe(0);
+       |            ^
+    123|     expect(parseNow('', 540)).toBe(540);
+    124|     expect(canBook({ start: 30, end: 60, now: parseNow('00:00', 540), blocked: false, bookings: [] })).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 26 passed (27)
+   Start at  19:46:39
+   Duration  998ms (transform 68ms, setup 0ms, collect 79ms, tests 18ms, environment 0ms, prepare 223ms)
 ```
+
+Why it fails: before the fix, the "now" parsing lives inline in `src/App.tsx`, so no function exists that a test can call, and the run stops with `TypeError: parseNow is not a function`. The test pins the behaviour I want: 00:00 becomes `now = 0`, an empty input keeps the previous value, and a 00:30-01:00 request is then Available. The behavioural evidence that R2 is real is my manual check: in the browser the "Current time (sim)" field refuses 00:00 and keeps the previous time, so 00:30-01:00 in Athena 101 shows "Unavailable - Start time must be strictly after the current time" (`evidence/r2-now-0000.png`). The other 26 tests still pass.
 
 ### 7.2 The manual UI check
 

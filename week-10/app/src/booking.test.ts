@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { canBook } from './booking';
+import { canBook, parseNow } from './booking';
 
 type Booking = { start: number; end: number };
 type Opts = { now?: number; blocked?: boolean; bookings?: Booking[] };
@@ -114,5 +114,13 @@ describe('canBook — regression tests for the provided bugs', () => {
     const before = structuredClone(bookings);
     expect(canBook({ start: 720, end: 780, now: NOW, blocked: false, bookings })).toBe(true);
     expect(bookings).toEqual(before);
+  });
+});
+
+describe('canBook — risk register regressions', () => {
+  test('R2 AC1: current time 00:00 sets now to 0, not the previous value', () => {
+    expect(parseNow('00:00', 540)).toBe(0);
+    expect(parseNow('', 540)).toBe(540);
+    expect(canBook({ start: 30, end: 60, now: parseNow('00:00', 540), blocked: false, bookings: [] })).toBe(true);
   });
 });
