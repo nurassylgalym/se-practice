@@ -1,0 +1,22 @@
+' diagrams/before.puml — modules of the starting point (week-08, baseline 658b750)
+@startuml
+title Before: rules in two places, data imported straight into the page
+component "main.tsx" as Main
+component "App.tsx" as App
+component "booking.ts" as Booking
+component "availability.ts" as Availability
+component "sampleData.ts" as SampleData
+component "types.ts" as Types
+component "booking.test.ts" as BookingTest
+
+Main --> App
+App --> Booking : canBook()
+App --> Availability : evaluateAvailability(), fmt()
+App --> SampleData : ROOMS, INITIAL_BOOKINGS
+App --> Types : Room, Booking, Verdict
+Availability --> Types
+SampleData --> Types
+BookingTest --> Booking : canBook()
+note right of App : toMinutes() parser,\nbookings joined to rooms by name
+note bottom of Availability : second copy of AC1–AC4\n(validateInterval, validateDuration,\ncheckRoomBlocked, checkOverlap)
+@enduml
