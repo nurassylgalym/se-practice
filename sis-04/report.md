@@ -185,7 +185,11 @@ Do NOT write code yet and do NOT propose a full rewrite.
 <!-- Short: the catalog (how many rooms, which equipment), how the filter is chosen on the page,
      what the empty state says, what happens to an old result when the room changes. -->
 
-(write here)
+- **Catalog:** `src/rooms.ts` holds 5 fictional rooms (Athena 101, Curie 202, Turing 110, Da Vinci 305, Feynman 220) with capacity 18–60, equipment from projector / whiteboard / mic, one blocked room (Turing 110) and each room's own bookings nested inside it (the 6 bookings from the old `sampleData.ts`).
+- **Filter on the page:** a Requirements panel with an attendees number and equipment checkboxes; the Matching rooms list comes from `filterRooms` (F1 capacity >= attendees, F2 all ticked items). Blocked rooms stay in the list with a red Blocked badge and are never Available (F3).
+- **Empty state (F4):** "No rooms match. No room fits 45 people with whiteboard. Lower the attendees or untick some equipment."
+- **Room change (F5):** the result is computed for the selected room with `checkRoom(ROOMS, room.id, …)` on every render, so picking another room with the same times shows that room's result at once; if the selected room drops out of the filtered list, the selection is cleared and the result goes back to the idle message.
+
 
 ### 4.2 Demonstration
 
@@ -194,11 +198,11 @@ Do NOT write code yet and do NOT propose a full rewrite.
 
 | Screenshot | What it shows |
 | --- | --- |
-| `evidence/filter-match.png` | (write here) |
-| `evidence/filter-empty.png` | (write here) |
-| `evidence/switch-a.png` | (write here) |
-| `evidence/switch-b.png` | (write here) |
-| `evidence/narrow.png` | (write here) |
+| `evidence/filter-match.png` | Attendees 30, no equipment ticked: the list shows Athena 101 (40 seats), Turing 110 (60, Blocked badge) and Feynman 220 (35); the 25-, 18-seat rooms are gone (F1). |
+| `evidence/filter-empty.png` | Attendees 45 with whiteboard ticked: Matching rooms (0) and the amber empty-state message "No rooms match…" (F4). Turing 110 has 60 seats but no whiteboard (F2). |
+| `evidence/switch-a.png` | Curie 202 selected, 11:00–12:00, current time 09:00: Unavailable, because Curie 202 has its own booking 11:00–12:00 listed under the result. |
+| `evidence/switch-b.png` | The same times 11:00–12:00 and current time 09:00, Athena 101 selected instead: Available, because Athena 101's bookings are 09:00–10:00 and 14:00–15:30 (F5). |
+| `evidence/narrow.png` | The Booking request panel at phone width, portrait: the start, end and current-time inputs stack in one column, and the Available result for Athena 101 11:00–12:00 and its bookings stay readable (AC6). |
 
 ## 5. Refactoring (Task 3)
 
@@ -208,10 +212,12 @@ Do NOT write code yet and do NOT propose a full rewrite.
 
 | Module or component | Responsibility |
 | --- | --- |
-| `src/rooms.ts` | (write here) |
-| `src/booking.ts` | (write here) |
-| `src/filter.ts` | (write here) |
-| (write here) | (write here) |
+| `src/rooms.ts` | Data only: the `Room` type and the `ROOMS` catalog, each room with its own bookings |
+| `src/booking.ts` | Rules: `canBook` (AC1–AC5), `checkRoom` (finds the chosen room and calls `canBook` with its `blocked` and `bookings`, F3/F5), `MAX_MINUTES` |
+| `src/filter.ts` | `filterRooms`: capacity >= attendees (F1), all selected equipment (F2) |
+| `src/time.ts` | `toMinutes` / `fmt`: converting between "HH:MM" and minutes for the page |
+| `src/App.tsx` | Presentation only: filter panel, room list, empty state, request form, result; imports the modules above |
+| `src/main.tsx` | Entry point, renders `App` |
 
 ### 5.2 Design decisions
 
@@ -220,8 +226,10 @@ Do NOT write code yet and do NOT propose a full rewrite.
 
 | Decision | Alternative I did not take | Why |
 | --- | --- | --- |
-| (write here) | (write here) | (write here) |
-| (write here) | (write here) | (write here) |
+| Blocked rooms stay in the filtered list with a Blocked badge | Hide blocked rooms inside `filterRooms` | The filter answers "does the room fit my group" (F1, F2) and `checkRoom` answers "is it free"; F3 is then enforced in one place, `canBook` via `checkRoom`, and the F3 test calls `checkRoom`. The user also sees why a large room cannot be booked (AC6). |
+| Delete `availability.ts`; the verdict comes only from `checkRoom` → `canBook`, the page shows "is blocked" or a hint listing the rules | Keep `availability.ts` as a reason-only module behind `checkRoom`, guarded by a parity test (the assistant's suggestion, 3.3) | AC1–AC4 were implemented twice (risk 1 in 3.1); keeping both means every rule change is made twice. The 26 `canBook` tests already pin AC1–AC5. The price is a less specific message, recorded as the limitation in 7. |
+| The selected room is looked up in the filtered list and cleared when it drops out | Keep `roomId` independent of the filter | Otherwise the page could show a verdict for a room that is no longer listed, which breaks F4 and F5. |
+| `MAX_MINUTES = 120` exported from `booking.ts`, used by `canBook` and by the help text | Keep the literal 120 in `canBook` and in the text | Risk 4 in 3.1: the limit was written in three places. Same behaviour: the T06 B1 and T07 B2 tests stay green. |
 
 ### 5.3 Duplication removed
 
@@ -229,7 +237,13 @@ Do NOT write code yet and do NOT propose a full rewrite.
 
 | Before (file / function, what was repeated) | After (where it lives now) |
 | --- | --- |
-| (write here) | (write here) |
+| `src/availability.ts` `validateInterval()` + `MINUTES_PER_DAY`: second copy of AC1 | `canBook` in `src/booking.ts` only |
+| `src/availability.ts` `validateDuration()` + `MAX_DURATION`: second copy of AC2 | `canBook` with `MAX_MINUTES` in `src/booking.ts` |
+| `src/availability.ts` `checkRoomBlocked()`: second copy of AC3 | `canBook`, reached through `checkRoom` with the room's own `blocked` |
+| `src/availability.ts` `checkOverlap()`: second copy of AC4, joining bookings to rooms by name | `canBook`, reached through `checkRoom` with `room.bookings` |
+| `src/App.tsx` `roomBookings`: the same name join (`b.room === room.name`) as `checkOverlap` | `room.bookings` nested in `src/rooms.ts` |
+| `src/App.tsx` help text: the literal "120 minutes" | `{MAX_MINUTES}` from `src/booking.ts` |
+| `src/booking.ts` `BookingRequest` interface: the request shape written twice, once unused | removed; the shape is declared once in `canBook`'s parameter |
 
 ## 6. Automated tests (Task 4)
 
@@ -240,30 +254,32 @@ Do NOT write code yet and do NOT propose a full rewrite.
 
 | ID | Test title (as in the file) | Input → expected |
 | --- | --- | --- |
-| AC1 | (write here) | (write here) |
-| AC2 | (write here) | (write here) |
-| AC3 | (write here) | (write here) |
-| AC4 | (write here) | (write here) |
-| AC5 | (write here) | (write here) |
-| F1 | (write here) | (write here) |
-| F2 | (write here) | (write here) |
-| F3 | (write here) | (write here) |
-| F4 | (write here) | (write here) |
-| F5 | (write here) | (write here) |
-| B1 | (write here) | (write here) |
-| B2 | (write here) | (write here) |
-| B3 | (write here) | (write here) |
-| B4 | (write here) | (write here) |
-| B5 | (write here) | (write here) |
-| B6 | (write here) | (write here) |
-| INT | (write here) | (write here) |
+| AC1 | `T02 AC1: 540–570 starts exactly at now, rejected` | canBook 540–570, now 540 → false |
+| AC2 | `T06 B1 AC2: 720–840 exactly 120 minutes, allowed` | canBook 720–840 → true |
+| AC3 | `T13 AC3: 660–720 in a blocked room, rejected` | canBook 660–720, blocked → false |
+| AC4 | `T09 B4 AC4: 630–690 partial overlap, rejected` | canBook 630–690 vs booking 600–660 → false |
+| AC5 | `AC5: an Available request leaves the bookings unchanged` | canBook 660–720 → true, bookings equal to the copy taken before |
+| F1 | `F1: 15 attendees keeps only rooms with capacity >= 15` | filterRooms(CATALOG, 15, []) → [b (20), c (30)] |
+| F2 | `F2: projector + whiteboard needs ALL items, the projector-only room is excluded` | filterRooms(CATALOG, 1, [projector, whiteboard]) → [b, c], not a |
+| F3 | `F3: a blocked room with a free slot is never available` | checkRoom(CATALOG, c, 660–720) → false |
+| F4 | `F4: 50 attendees with a projector match no room, the list is empty` | filterRooms(CATALOG, 50, [projector]) → [] |
+| F5 | `F5: same times 10:30–11:30, room a is booked and room b is free` | checkRoom a 630–690 → false, checkRoom b 630–690 → true |
+| B1 | `T06 B1 AC2: 720–840 exactly 120 minutes, allowed` | canBook 720–840 → true |
+| B2 | `T07 B2 AC2: 720–841 is 121 minutes, rejected` | canBook 720–841 → false |
+| B3 | `T01 B3 AC4: 660–720 touches the booking end, allowed` | canBook 660–720 vs booking 600–660 → true |
+| B4 | `T09 B4 AC4: 630–690 partial overlap, rejected` | canBook 630–690 vs booking 600–660 → false |
+| B5 | `B5 F1: capacity exactly equal to attendees (20 for 20) is included` | filterRooms(CATALOG, 20, []) contains b (20 seats) |
+| B6 | `B6 F1: capacity one below attendees (20 for 21) is excluded` | filterRooms(CATALOG, 21, []) → [c], b excluded |
+| INT | `INT: filterRooms then checkRoom — of the 15+ rooms with a projector, only b is free 10:00–11:00` | filterRooms → [b, c]; checkRoom on each, 600–660 → only b (c is blocked) |
 
 ### 6.2 Commands
 
 <!-- The commands exactly as you typed them, from app/. -->
 
 ```text
-(paste here)
+cd sis-04\app
+npm install
+npx vitest run
 ```
 
 ### 6.3 Final run
@@ -272,7 +288,15 @@ Do NOT write code yet and do NOT propose a full rewrite.
      tests equals what your test files hold (R2). -->
 
 ```text
-(paste here)
+ RUN  v3.2.4 C:/Users/Nurassyl Galym/Desktop/KBTU/Software Engineering/Lab Week 1/se-practice/sis-04/app
+
+ ✓ src/booking.test.ts (26 tests) 13ms
+ ✓ src/rooms.test.ts (11 tests) 9ms
+
+ Test Files  2 passed (2)
+      Tests  37 passed (37)
+   Start at  18:13:15
+   Duration  821ms (transform 96ms, setup 0ms, collect 142ms, tests 22ms, environment 0ms, prepare 357ms)
 ```
 
 ## 7. Quality evaluation (Task 5)
@@ -283,10 +307,10 @@ Do NOT write code yet and do NOT propose a full rewrite.
 
 | Measure | Original | Final | How I obtained it |
 | --- | --- | --- | --- |
-| Automated tests passed / total | (write here) | (write here) | (write here) |
-| Duplicated logic locations removed | (write here) | (write here) | (write here) |
-| Code structure: modules and their responsibilities | (write here) | (write here) | (write here) |
-| Remaining limitation | (write here) | (write here) | (write here) |
+| Automated tests passed / total | 26/26 | 37/37 | the `Tests` line of the baseline run in 1.1 and of the final run in 6.3, both `npx vitest run` in `app/` |
+| Duplicated logic locations removed | 0 (baseline) | 7 | counted the rows of 5.3; each is visible in `git diff 658b750 HEAD -- sis-04/app/src` |
+| Code structure: modules and their responsibilities | 6 source files: `App.tsx` (page + data wiring + time parsing), `booking.ts`, `availability.ts` (second rule copy + fmt), `sampleData.ts`, `types.ts`, `main.tsx` | 6 source files: `App.tsx` (page only), `rooms.ts`, `filter.ts`, `booking.ts`, `time.ts`, `main.tsx`; plus 2 test files | `git ls-files sis-04/app/src` at 658b750 and at the final commit, read against 5.1 |
+| Remaining limitation | — | Unavailable no longer names the exact failed rule (only "is blocked" or a hint listing the rules), and who booked a slot (`bookedBy`) is no longer shown; the F5 reset on the page is checked by hand and by screenshots, not by a rendered UI test | what I saw on the page after deleting `availability.ts` (switch-a.png) and the fixed `Room` type in `rooms.ts` |
 
 ## 8. AI evidence appendix
 
@@ -428,25 +452,50 @@ Extend: T06 -> B1, T07 -> B2, T01 -> B3, T09 -> B4.
 
 ### 8.3 Exchange 3
 
-**Tool and model:** (write here)
-**Date:** (write here)
-**Purpose:** (write here)
+**Tool and model:** Claude (claude.ai), Claude Opus 5.5
+**Date:** 2026-11-16
+**Purpose:** plan steps 4–6: rewire App.tsx to rooms/filter/checkRoom, the filter UI, time.ts, removing the duplicated modules
 
 **Prompt:**
 
 ```text
-(paste here)
+Steps 4–6 of my plan. Rewrite sis-04/app/src/App.tsx so that:
+- rooms come only from ROOMS in ./rooms, the verdict only from checkRoom in ./booking,
+  the list only from filterRooms in ./filter; App holds no room data and no rule of its own;
+- a filter panel: attendees number input and equipment checkboxes (projector, whiteboard, mic);
+- only matching rooms are listed; blocked rooms stay in the list with a Blocked badge (F3);
+- a clear empty state when no room matches (F4);
+- the selected room is cleared when it drops out of the filtered list, and the result
+  always refers to the currently selected room (F5);
+- keep the current Tailwind look, responsive on phone width (AC6);
+- move toMinutes and fmt into src/time.ts, fix the 00:00 bug (risk 5),
+  build the "max 120 minutes" help text from one exported constant (risk 4).
+Then list exactly which files to delete (availability.ts, sampleData.ts, types.ts) and confirm
+nothing else imports them. Keep the code compact.
 ```
 
 **Output used:**
 
 ```text
-(paste here)
+const matches = useMemo(() => filterRooms(ROOMS, { attendees, equipment: wanted }), [attendees, wanted]);
+const room = matches.find((r) => r.id === roomId) ?? null;
+// F5: a room that drops out of the filtered list is no longer selected
+useEffect(() => { if (roomId && !room) setRoomId(''); }, [roomId, room]);
+const verdict = !room || !startStr || !endStr ? 'idle'
+  : checkRoom(ROOMS, room.id, { start, end, now }) ? 'available' : 'unavailable';
+const setClock = (v: string) => { const m = toMinutes(v); if (!Number.isNaN(m)) setNow(m); }; // 00:00 = 0 is valid
+[...]
+// booking.ts
+export const MAX_MINUTES = 120; // AC2, also shown in the page's help text
+  if (end - start > MAX_MINUTES) return false;
+[...] Delete src/availability.ts, src/sampleData.ts, src/types.ts — no other file imports them.
 ```
 
-**Problems found:** (write here)
-**Changes made:** (write here)
-**Verified by:** (write here)
+**Problems found:** (1) It rewrote the whole `App.tsx` in one answer instead of one change at a time, so I read the diff section by section against F1–F5 before keeping it. (2) It changed one line inside `canBook` (120 → `MAX_MINUTES`) although step 3 said to keep `canBook` as is; the behaviour is the same, but it is a change I have to declare. (3) With `availability.ts` gone, the Unavailable box can no longer say which rule failed; the assistant replaced it with a generic hint, which I record as the limitation in 7. (4) It also removed the unused `BookingRequest` interface, which I had not asked for; I kept it removed because it was risk R7 in its own analysis.
+
+**Changes made:** kept the rewrite after reading it; kept `MAX_MINUTES` in `canBook` because the T06 B1 / T07 B2 tests prove the 120 limit is unchanged; deleted the three files with `del` and checked that the build still starts.
+
+**Verified by:** `npx vitest run` after deleting `availability.ts`, `sampleData.ts`, `types.ts`: `Tests 37 passed (37)` (6.3); `npm run dev` started (VITE v5.4.8 ready); on the page Curie 202 11:00–12:00 is Unavailable and Athena 101 with the same times is Available (switch-a.png, switch-b.png), and 45 attendees + whiteboard shows the empty state (filter-empty.png).
 
 ## 9. Checker results and known fails
 
@@ -464,4 +513,12 @@ Extend: T06 -> B1, T07 -> B2, T01 -> B3, T09 -> B4.
      incorrect? What did you personally verify? How did tests influence your engineering
      decisions? What would you improve next? -->
 
-(write here)
+I gave the assistant one context message in a fresh chat: a map of the repo, AC1–AC6, F1–F5, the constraints (no login, payments, live APIs or database) and my five source files. I asked for risks and a plan, not code. After that I sent a separate prompt for each step of my plan.
+
+Some of its findings were really useful. It noticed that rooms were picked by id but their bookings were matched by name, and that the current-time field could never be set to 00:00 because of `|| currentTime`. I would have missed both. But it was also wrong several times. It said the two rule engines already disagreed; when I compared canBook with evaluateAvailability they gave the same result. It wanted to keep availability.ts behind a parity test, which keeps AC1–AC4 written twice, so I rejected it. It told me to just rename T01, T06, T07 and T09 to get B1–B4, but those tests called my helper check(), not canBook. And it rewrote the whole App.tsx and changed a line inside canBook that I had asked it to leave alone.
+
+I checked every line it pointed at, worked out the expected values of the new tests from the rules myself (15 attendees must leave only the 20- and 30-seat rooms), ran the suite until it showed 37/37 and clicked through the page.
+
+The 26 old canBook tests are what let me delete availability.ts and replace 120 with MAX_MINUTES without worrying that I broke AC1–AC5. B5 fails if >= turns into >.
+
+Next I would add a rendered UI test for F5, bring back a specific reason for Unavailable, and show who booked each slot again.
