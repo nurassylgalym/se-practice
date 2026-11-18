@@ -651,12 +651,70 @@ Refactor the availability logic into a small, pure module, keeping the existing 
 
 **Problem → pattern → benefit:**
 
+The parsing of "now" was stuck inside the React component `src/App.tsx`, where no test could reach it, and its logical-OR fallback treated the valid value 0 (00:00) as missing. No pattern, just an extracted pure function: `toMinutes` and a new `parseNow` moved into `src/booking.ts` with an explicit NaN check, so 00:00 now works and the AC1 "now" path is covered by the R2 test; Adapter or Strategy would not help, because there is one data shape and one rule.
+
 **What I rejected from the agent's patch, and why:**
+
+Nothing from the diff itself: it touched only `src/booking.ts` and `src/App.tsx`, as it said it would. It offered to leave the merge of `evaluateAvailability` into `canBook` (R3) out of this patch, and I agreed: that is a separate risk, not this mitigation. I did not take its claim that it compared old and new `toMinutes` on 1,530 strings as evidence, because I did not run that comparison; my evidence is the suite, lint, typecheck and build on my machine.
+
+My first `git diff` also showed an unrelated change: the final newline of `src/App.tsx` was gone after I replaced the file. I restored it, so the diff above holds only the approved change.
 
 The diff I approved (`git diff`):
 
 ```text
-(paste here)
+diff --git a/week-10/app/src/App.tsx b/week-10/app/src/App.tsx
+index 286c886..109064c 100644
+--- a/week-10/app/src/App.tsx
++++ b/week-10/app/src/App.tsx
+@@ -12,14 +12,7 @@ import {
+ import type { Booking, Room, Verdict } from './types';
+ import { ROOMS, INITIAL_BOOKINGS } from './sampleData';
+ import { evaluateAvailability, fmt, MINUTES_PER_DAY_EXPORT } from './availability';
+-import { canBook } from './booking';
+-
+-const toMinutes = (hhmm: string): number => {
+-  if (!/^\d{1,2}:\d{2}$/.test(hhmm)) return NaN;
+-  const [h, m] = hhmm.split(':').map(Number);
+-  if (h < 0 || h > 23 || m < 0 || m > 59) return NaN;
+-  return h * 60 + m;
+-};
++import { canBook, parseNow, toMinutes } from './booking';
+ 
+ function App() {
+   const [bookings] = useState<Booking[]>(INITIAL_BOOKINGS);
+@@ -129,7 +122,7 @@ function App() {
+                 <input
+                   type="time"
+                   value={fmt(currentTime)}
+-                  onChange={(e) => setCurrentTime(toMinutes(e.target.value) || currentTime)}
++                  onChange={(e) => setCurrentTime(parseNow(e.target.value, currentTime))}
+                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                 />
+               </div>
+diff --git a/week-10/app/src/booking.ts b/week-10/app/src/booking.ts
+index a2655ac..8699bf7 100644
+--- a/week-10/app/src/booking.ts
++++ b/week-10/app/src/booking.ts
+@@ -21,4 +21,18 @@ export function canBook({ start, end, now, blocked, bookings }: {
+     if (start < b.end && end > b.start) return false;
+   }
+   return true;
++}
++
++/** "HH:MM" → minutes from 00:00; NaN when the text is not a valid time. */
++export function toMinutes(hhmm: string): number {
++  if (!/^\d{1,2}:\d{2}$/.test(hhmm)) return NaN;
++  const [h, m] = hhmm.split(':').map(Number);
++  if (h < 0 || h > 23 || m < 0 || m > 59) return NaN;
++  return h * 60 + m;
++}
++
++/** The simulated "now": keeps `previous` only when the input is not a valid time (00:00 is valid). */
++export function parseNow(value: string, previous: number): number {
++  const t = toMinutes(value);
++  return Number.isNaN(t) ? previous : t;
+ }
+\ No newline at end of file
 ```
 
 ### 8.2 The second mitigation
@@ -730,16 +788,52 @@ index b786d88..7627192 100644
 
 | ID | L before | I before | Score before | L after | I after | Score after | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| | | | | | | | |
-| | | | | | | | |
+| R2 | 2 | 2 | 4 | 1 | 2 | 2 | `parseNow` keeps the previous value only on NaN, so 00:00 is accepted; the `R2 AC1` test passes in 8.4. Likelihood stays above zero because `App.tsx` itself is still not tested (R4). |
+| R1 | 3 | 3 | 9 | 1 | 3 | 3 | the approved patch (6.3) removes the deploy, Supabase/login and real-data lines and names only real commands; the checker passes A1-A3 and C1-C6. Impact stays 3: a tool may not load `AGENTS.md` (2.3), and a human could still deploy by hand. |
 
 ### 8.4 The final run
 
 The real output of the **full** suite after both mitigations. Every test must pass.
 
 ```text
-(paste here)
+ RUN  v3.2.4 C:/Users/Nurassyl Galym/Desktop/KBTU/Software Engineering/Lab Week 1/se-practice/week-10/app
+
+ ✓ src/booking.test.ts (27 tests) 8ms
+   ✓ canBook — plan T01–T14 > T01 AC4: 660–720 touches the booking end, allowed 2ms
+   ✓ canBook — plan T01–T14 > T02 AC1: 540–570 starts exactly at now, rejected 0ms
+   ✓ canBook — plan T01–T14 > T03 AC1: 720–720 zero duration, rejected 0ms
+   ✓ canBook — plan T01–T14 > T04 AC1: 750–720 reversed, rejected 0ms
+   ✓ canBook — plan T01–T14 > T05 AC1: 1380–1441 past the end of the day, rejected 0ms
+   ✓ canBook — plan T01–T14 > T06 AC2: 720–840 exactly 120 minutes, allowed 0ms
+   ✓ canBook — plan T01–T14 > T07 AC2: 720–841 is 121 minutes, rejected 0ms
+   ✓ canBook — plan T01–T14 > T08 AC4: 570–600 touches the booking start, allowed 0ms
+   ✓ canBook — plan T01–T14 > T09 AC4: 630–690 partial overlap, rejected 0ms
+   ✓ canBook — plan T01–T14 > T10 AC4: 570–690 contains the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T11 AC4: 615–645 inside the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T12 AC4: 600–660 identical to the booking, rejected 0ms
+   ✓ canBook — plan T01–T14 > T13 AC3: 660–720 in a blocked room, rejected 0ms
+   ✓ canBook — plan T01–T14 > T14 AC4: 630–690 with no bookings, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > X1 AC1: 1380–1440 ends exactly at 24:00, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > X2 AC4: 660–720 touches two bookings, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B01 AC1: 541–570 first minute after now, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B02 AC1: 660–720 with now 700, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B03 AC1: 701–720 with now 700, allowed 0ms
+   ✓ canBook — own cases and extra boundaries > B04 AC4: 659–720 one minute over the booking end, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B05 AC4: 570–601 one minute into the booking start, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B06 AC4: 700–750 overlaps only the second booking, rejected 0ms
+   ✓ canBook — own cases and extra boundaries > B07 AC4: 630–690 overlaps a booking listed second in an unsorted list, rejected 0ms
+   ✓ canBook — data preservation > AC5: an Available request leaves the bookings unchanged 0ms
+   ✓ canBook — regression tests for the provided bugs > BUG-A AC4: 690–720 touches only the start of the second booking, allowed 0ms
+   ✓ canBook — regression tests for the provided bugs > BUG-B AC5: 720–780 touches nothing, Available, bookings unchanged 0ms
+   ✓ canBook — risk register regressions > R2 AC1: current time 00:00 sets now to 0, not the previous value 0ms
+
+ Test Files  1 passed (1)
+      Tests  27 passed (27)
+   Start at  20:00:42
+   Duration  857ms (transform 81ms, setup 0ms, collect 86ms, tests 8ms, environment 0ms, prepare 281ms)
 ```
+
+After both mitigations I also ran `npm run lint` (passes; the same TypeScript 5.6.3 warning as in 2.1), `npm run typecheck` (passes) and `npm run build` (built in 4.07s).
 
 ---
 

@@ -12,14 +12,7 @@ import {
 import type { Booking, Room, Verdict } from './types';
 import { ROOMS, INITIAL_BOOKINGS } from './sampleData';
 import { evaluateAvailability, fmt, MINUTES_PER_DAY_EXPORT } from './availability';
-import { canBook } from './booking';
-
-const toMinutes = (hhmm: string): number => {
-  if (!/^\d{1,2}:\d{2}$/.test(hhmm)) return NaN;
-  const [h, m] = hhmm.split(':').map(Number);
-  if (h < 0 || h > 23 || m < 0 || m > 59) return NaN;
-  return h * 60 + m;
-};
+import { canBook, parseNow, toMinutes } from './booking';
 
 function App() {
   const [bookings] = useState<Booking[]>(INITIAL_BOOKINGS);
@@ -129,7 +122,7 @@ function App() {
                 <input
                   type="time"
                   value={fmt(currentTime)}
-                  onChange={(e) => setCurrentTime(toMinutes(e.target.value) || currentTime)}
+                  onChange={(e) => setCurrentTime(parseNow(e.target.value, currentTime))}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
                 />
               </div>
