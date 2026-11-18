@@ -504,7 +504,7 @@ export const MAX_MINUTES = 120; // AC2, also shown in the page's help text
 
 | Check | Why it still fails |
 | --- | --- |
-| (write here) | (write here) |
+| none | All 33 checks pass in the final run of `python tests/check_sis.py` (with `app/node_modules` removed locally, as on a fresh clone). |
 
 ## 10. AI reflection (Task 6)
 
