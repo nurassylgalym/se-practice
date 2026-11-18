@@ -626,13 +626,18 @@ Why it fails: before the fix, the "now" parsing lives inline in `src/App.tsx`, s
 
 | View | Width | What I checked | Result | Screenshot |
 | --- | --- | --- | --- | --- |
-| Desktop | | | | `evidence/ui-desktop.png` |
-| Mobile | | | | `evidence/ui-mobile.png` |
+| Desktop | full-screen Chrome window on my laptop (two-column layout, above the `lg` breakpoint) | Athena 101, 10:00-11:00 with now 09:00: the request only touches Dr. Patel's 09:00-10:00 booking (AC4); verdict colour, icon and message; form and Room Details side by side; nothing cut off or overlapping | Available, "Athena 101 is free from 10:00 to 11:00." Clear, readable, layout intact | `evidence/ui-desktop.png` |
+| Mobile | 375 px, iPhone SE in Chrome DevTools device toolbar | Athena 101, 09:30-10:30 with now 09:00: a real overlap (AC4); fields stack in one column; the reason text wraps inside the red box; nothing cut off | Unavailable, "Overlaps an existing booking (09:00-10:00 by Dr. Patel)." Clear, readable, layout intact | `evidence/ui-mobile.png` |
 
 ### 7.3 Tests and checks I did not run
 
 <!-- Name each one and why. "None" only if it is true. -->
--
+- No automated test of `src/App.tsx` or `src/availability.ts`: the project has no page-test setup, and adding one (jsdom, Testing Library) means new dependencies, which this lab forbids. The UI was checked by hand only (R4).
+- No test that `canBook` and `evaluateAvailability` agree (R3); I did not reproduce the assistant's own comparisons on 3,840 and 1,530 inputs, so I do not rely on them.
+- Only Chrome on Windows, and the phone width only in DevTools: no real phone, no Safari or Firefox.
+- No accessibility check (keyboard, screen reader, contrast).
+- No `npm audit` run in detail and no dependency update (R7): updating packages is out of scope.
+- The lint warning about TypeScript 5.6.3 was not investigated further; lint still exits without errors.
 
 ---
 
@@ -863,13 +868,13 @@ Use the same IDs as `known_fails` in `submission.yml`. Write `none` if the run i
 
 | Check | Why it stays |
 | --- | --- |
-| | |
+| none | the last run was clean: 31 PASS, 0 FAIL, 0 ERROR |
 
 ---
 
 ## 10. Release decision and conclusion
 
-**Decision:** GO / CONDITIONAL / NO-GO
+**Decision:** CONDITIONAL
 
 <!-- Keep one word above. GO is not allowed while any confirmed risk still scores 6 or more.
      Then 80-150 words, in your own words, without the assistant: why this decision, from the
@@ -881,3 +886,5 @@ Use the same IDs as `known_fails` in `submission.yml`. Write `none` if the run i
      but no test covers App.tsx, so a regression there would be invisible." -->
 
 <!-- Write your conclusion below this line -->
+
+CONDITIONAL. The worst risk was R1: AGENTS.md told an agent to deploy with netlify --prod, add Supabase and a login, and use real KBTU data, 3 x 3 = 9. The approved 10-line patch removes all of that and the checker passes C1-C6, so it is now 1 x 3. It is not zero: a tool may not load the file, and someone could still deploy by hand. R2, the 00:00 bug, is fixed by moving parseNow into booking.ts; the R2 test fails before and passes after, 27/27 green, now 1 x 2. What keeps this from GO: R3 (the rule still lives in two files), R4 (nothing tests App.tsx and there is no CI) and R5 (five rooms instead of one) are open and owned by me. I checked the UI only by hand in Chrome, not on a real phone.
