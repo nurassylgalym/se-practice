@@ -1,0 +1,54 @@
+# week-10/submission.yml — your declaration for this lab.
+schema: 1
+week: "10"
+
+student:
+  name: "Galym Nurassyl"
+  student_id: "26B030025"
+  github: "nurassylgalym"
+
+assistant:
+  tool: "Claude (chat)"
+  model: "Claude Opus 5.5"
+  environment: chat
+
+project:
+  starting_point: week-08
+  baseline_commit: "313f4c9"
+  language: ts
+  vitest: "3.2.4"
+
+counts:
+  claims_challenged: 11
+  risks_registered: 7
+  risks_confirmed: 6
+  tests_final: 27
+  agents_lines_changed: 10
+
+audit:
+  level: 1
+
+decision:
+  top_two: [R1, R2]
+  mitigated: [R2, R1]
+  release: conditional
+
+checker:
+  pass: 31
+  fail: 0
+  error: 0
+  commit: "156238a"    # replace with: git rev-parse --short HEAD at the moment you ran the checker
+  known_fails: []
+
+review_findings:
+  - "R1: AGENTS.md line 38 runs npx netlify deploy --prod and line 33 adds Supabase and a login - confirmed, removed by the approved patch (C2, C5)"
+  - "AC4: AGENTS.md line 19 said touching counts as an overlap; the contract, canBook and T01/T08 allow it - confirmed, fixed in the patch (C3)"
+  - "R2: src/App.tsx used a logical-OR fallback, so now could not be set to 00:00 - confirmed in the browser, fixed by parseNow in src/booking.ts"
+  - "AGENTS.md line 26 names npm run test:unit, which does not exist (Missing script) - confirmed, replaced by npm test"
+  - "1b (linter): the reviewer said npm run lint passed with no warnings; my run shows a TypeScript 5.6.3 support warning - unsupported"
+
+honesty:
+  review_was_read_only: yes
+  agents_patch_approved_by_me: yes
+  outputs_unedited: yes
+  ai_usage_disclosed: yes
